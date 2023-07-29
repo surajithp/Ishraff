@@ -1,4 +1,4 @@
-const userDataValidate = (req, res, next) => {
+export const userDataValidate = (req, res, next) => {
   if (!req.body.username) {
     throw Error("username is required");
   }
@@ -15,5 +15,3 @@ const userDataValidate = (req, res, next) => {
     throw Error("password should have atleast 5 characters");
   }
 };
-
-module.exports = { userDataValidate };

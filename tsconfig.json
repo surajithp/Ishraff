@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "outDir": "dist",
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": false,
     "lib": ["esnext"],
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "declaration": true
+  },
+  "include": ["./**/*.ts", "./*.json"]
 }

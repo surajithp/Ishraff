@@ -9,7 +9,7 @@ const app = express();
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 
-const port = 5000;
+const port = 3000;
 
 dotenv.config();
 
