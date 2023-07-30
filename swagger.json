@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "This is a simple example NodeJS API project to demonstrate Swagger Documentation",
+    "description": "Ishraf NodeJS API project to demonstrate Swagger Documentation",
     "version": "1.0.0",
     "title": "Tasks API",
     "contact": {
@@ -13,22 +13,46 @@
     }
   },
   "schemes": ["http"],
-  "host": "localhost:3080",
-  "basePath": "/api",
+  "host": "44.211.138.233",
+  "basePath": "",
   "paths": {
-    "/todos": {
-      "get": {
-        "summary": "Get all the tasks",
-        "description": "Get all the tasks",
+    "/user": {
+      "post": {
+        "summary": "Create User",
+        "description": "Create User",
         "produces": ["application/json"],
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "User creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                },
+                "phoneNumber": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "successful operation",
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/todosResponse"
+                "$ref": "#/definitions/userResponse"
               }
             }
           },
@@ -41,24 +65,26 @@
         }
       }
     },
-    "/todo": {
+    "/signin": {
       "post": {
-        "summary": "Save the task",
-        "description": "Save the task",
+        "summary": "User login",
+        "description": "User login",
         "produces": ["application/json"],
         "consumes": ["application/json"],
         "parameters": [
           {
             "in": "body",
             "name": "body",
-            "description": "task object",
+            "description": "User signin payload",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "task": {
-                  "type": "object",
-                  "$ref": "#/definitions/Task"
+                "email": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
                 }
               }
             }
@@ -70,7 +96,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/todosResponse"
+                "$ref": "#/definitions/userResponse"
               }
             }
           },
@@ -83,33 +109,15 @@
         }
       }
     },
-    "/todos/{id}": {
-      "put": {
-        "summary": "Update the tasks",
-        "description": "Update the tasks",
+    "/api/platform/invitation/": {
+      "get": {
+        "summary": "Get Platform invitation code",
+        "description": "Get Platform invitation code",
         "produces": ["application/json"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "task id that needs to be deleted",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "description": "task object",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "task": {
-                  "type": "object",
-                  "$ref": "#/definitions/Task"
-                }
-              }
-            }
+            "name": "token",
+            "token": "string"
           }
         ],
         "responses": {
@@ -118,40 +126,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/todosResponse"
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid status value",
-            "schema": {
-              "$ref": "#/definitions/InvalidResponse"
-            }
-          }
-        }
-      }
-    },
-    "/todo/{id}": {
-      "delete": {
-        "summary": "Delete the task",
-        "description": "Delete the task",
-        "produces": ["application/json"],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "task id that needs to be deleted",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/todosResponse"
+                "$ref": "#/definitions/invitationResponse"
               }
             }
           },
@@ -166,34 +141,25 @@
     }
   },
   "definitions": {
-    "todosResponse": {
+    "userResponse": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "integer"
-        },
-        "task": {
-          "type": "string"
-        },
-        "assignee": {
-          "type": "string"
-        },
-        "status": {
+        "token": {
           "type": "string"
         }
       }
     },
-    "Task": {
+    "invitationResponse": {
       "type": "object",
       "properties": {
-        "task": {
-          "type": "string"
-        },
-        "assignee": {
-          "type": "string"
-        },
         "status": {
           "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
         }
       }
     },
