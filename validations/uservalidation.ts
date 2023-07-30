@@ -14,4 +14,5 @@ export const userDataValidate = (req, res, next) => {
   if (req.body.password.length < 5) {
     throw Error("password should have atleast 5 characters");
   }
+  next();
 };

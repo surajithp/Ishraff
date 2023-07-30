@@ -17,7 +17,7 @@ export const createNewUser = async (req, res) => {
   } catch (error) {
     console.log("=error", error);
     res.status(422);
-    res.send({ message: error });
+    res.send({ message: "User already exists with this email" });
   }
 };
 
