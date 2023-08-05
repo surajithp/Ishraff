@@ -37,6 +37,79 @@ export const createProject = async (req, res) => {
   res.json({ status: "success", data: project, errors: [] });
 };
 
+export const updateProject = async (req, res) => {
+  const projectId = req.params.id;
+  const projectDetails = await prisma.project.findFirst({
+    where: {
+      id: projectId
+    }
+  });
+  if (projectDetails) {
+    const project = await prisma.project.update({
+      where: {
+        id: projectId
+      },
+      data: {
+        ...req.body
+      }
+    });
+    res.json({ status: "success", data: project, errors: [] });
+  } else {
+    res.status(404);
+    res.send({ message: "Project does not exist" });
+  }
+};
+
+export const createProjectInvitation = async (req, res) => {
+  const projectId = req.params.id;
+  const projectDetails = await prisma.project.findFirst({
+    where: {
+      id: projectId
+    }
+  });
+  if (projectDetails.type === "team") {
+    const inviteeDetails = await prisma.projectInvitation.findFirst({
+      where: {
+        inviteeId: req.body.memberId
+      }
+    });
+    console.log("=====inviteeDetails", inviteeDetails);
+    if (!inviteeDetails) {
+      const projectInvitation = await prisma.projectInvitation.create({
+        data: {
+          userId: req.user.id,
+          inviteeId: req.body.memberId,
+          status: "not-accepted",
+          role: req.body.role,
+          projectId: projectId
+        }
+      });
+      res.json({ status: "success", data: projectInvitation, errors: [] });
+    } else {
+      res.status(422);
+      res.send({ message: "Project invitation already existed" });
+    }
+  } else {
+    res.status(422);
+    res.send({ message: "Project does not allow adding members" });
+  }
+};
+
+export const getProjectInvitations = async (req, res) => {
+  const projectId = req.params.id;
+  console.log("==projectId", projectId);
+  const projectInvitation = await prisma.projectInvitation.findMany({
+    where: {
+      projectId: projectId,
+      userId: req.user.id
+    },
+    include: {
+      invitee: true
+    }
+  });
+  res.json({ status: "success", data: projectInvitation, errors: [] });
+};
+
 export const createProjectMember = async (req, res) => {
   const member = await prisma.projectMember.create({
     data: {

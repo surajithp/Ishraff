@@ -7,7 +7,10 @@ import {
   getProjects,
   createProjectMember,
   getProjectMembers,
-  getPlatformUsers
+  getPlatformUsers,
+  createProjectInvitation,
+  getProjectInvitations,
+  updateProject
 } from "./handlers/project";
 import {
   generateInvitationCode,
@@ -30,6 +33,8 @@ router.post(
   createProject
 );
 
+router.patch("/project/:id", updateProject);
+
 router.post("/project/member/invitation", createProjectMember);
 
 router.get("/project/:id/members", getProjectMembers);
@@ -37,6 +42,10 @@ router.get("/project/:id/members", getProjectMembers);
 router.get("/platform/users", getPlatformUsers);
 
 router.post("/platform/invitation", createPlatformInvitation);
+
+router.post("/project/:id/invitation", createProjectInvitation);
+
+router.get("/project/:id/invitations", getProjectInvitations);
 
 router.get("/platform/invitations", getUserPlatformInvitations);
 

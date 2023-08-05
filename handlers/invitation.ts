@@ -40,31 +40,39 @@ export const getUserPlatformInvitations = async (req, res) => {
           id: true,
           password: false
         }
+      },
+      invitee: {
+        select: {
+          email: true,
+          username: true,
+          phoneNumber: true,
+          id: true,
+          password: false
+        }
       }
     }
   });
-  let proms = [];
-  invitations.forEach((invitation) => {
-    proms.push(
-      prisma.user.findFirst({
-        where: {
-          id: invitation.receiverId
-        }
-      })
-    );
-  });
-  const data = await Promise.all(proms);
-  console.log("==data", data);
-  invitations.forEach((invitation) => {
-    const receiverDetails = data.find(
-      (item) => item.id === invitation.receiverId
-    );
-    if (receiverDetails) {
-      invitation.receiverEmail = receiverDetails.email;
-      invitation.receiverMobile = receiverDetails.phoneNumber;
-      invitation.receiverName = receiverDetails.username;
-    }
-  });
-  console.log("=========skipped");
+  // let proms = [];
+  // invitations.forEach((invitation) => {
+  //   proms.push(
+  //     prisma.user.findFirst({
+  //       where: {
+  //         id: invitation.receiverId
+  //       }
+  //     })
+  //   );
+  // });
+  // const data = await Promise.all(proms);
+  // console.log("==data", data);
+  // invitations.forEach((invitation) => {
+  //   const receiverDetails = data.find(
+  //     (item) => item.id === invitation.receiverId
+  //   );
+  //   if (receiverDetails) {
+  //     invitation.receiverEmail = receiverDetails.email;
+  //     invitation.receiverMobile = receiverDetails.phoneNumber;
+  //     invitation.receiverName = receiverDetails.username;
+  //   }
+  // });
   res.json({ status: "success", data: invitations, errors: [] });
 };
