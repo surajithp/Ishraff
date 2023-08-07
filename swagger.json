@@ -16,7 +16,7 @@
   "host": "44.211.138.233",
   "basePath": "",
   "paths": {
-    "/user": {
+    "/signup": {
       "post": {
         "summary": "Create User",
         "description": "Create User",
@@ -138,6 +138,55 @@
           }
         }
       }
+    },
+    "/api/project/": {
+      "get": {
+        "summary": "Create Project",
+        "description": "Create Project",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Project creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/projectResponse"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -157,6 +206,20 @@
         },
         "code": {
           "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        }
+      }
+    },
+    "projectResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object"
         },
         "errors": {
           "type": "array"

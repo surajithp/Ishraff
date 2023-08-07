@@ -41,8 +41,8 @@ model Project {
   id                String              @id @default(uuid())
   createdAt         DateTime            @default(now())
   name              String              @unique
-  type              String
-  location          String
+  type              ProjectType         @default(self)
+  location          String?
   latitude          Float
   longitude         Float
   startDate         DateTime?
@@ -64,7 +64,7 @@ model ProjectInvitation {
   userId    String
   inviteeId String
   invitee   User     @relation("Invitee User", fields: [inviteeId], references: [id])
-  role String        @default("manager")
+  role      Role     @default(manager)
   projectId String
   project   Project  @relation(fields: [projectId], references: [id])
   status    String
@@ -73,7 +73,7 @@ model ProjectInvitation {
 model ProjectMember {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-  role      String
+  role      Role
   projectId String
   belongsTo Project  @relation(fields: [projectId], references: [id])
   userId    String
@@ -85,6 +85,17 @@ enum UPDATE_STATUS {
   IN_PROGRESS
   COMPLETED
   ARCHIVED
+}
+
+enum Role {
+  manager
+  worker
+  guest
+}
+
+enum ProjectType {
+  self
+  team
 }
 
 model Update {

@@ -14,7 +14,7 @@ export const createPlatformInvitation = async (req, res) => {
   if (!senderInvitation) {
     const invitation = await prisma.platformInvitation.create({
       data: {
-        senderId: req.body.senderId,
+        senderId: req.user.id,
         receiverId: req.body.receiverId,
         status: "not-accepted"
       }

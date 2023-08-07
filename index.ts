@@ -1,5 +1,7 @@
 import router from "./router";
 import { createNewUser, signin } from "./handlers/user";
+import { handleInputErrors } from "./modules/middleware";
+import { body } from "express-validator";
 import { userDataValidate } from "./validations/uservalidation";
 import * as dotenv from "dotenv";
 import cors from "cors";
@@ -26,8 +28,32 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/api", protect, router);
 
-app.post("/user", userDataValidate, createNewUser);
-app.post("/signin", signin);
+app.post(
+  "/signup",
+  body("username").notEmpty().withMessage("Name should not be empty"),
+  body("username").isString().withMessage("Name should be string"),
+  body("password")
+    .isStrongPassword({
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minSymbols: 1,
+      minNumbers: 1
+    })
+    .withMessage(
+      "Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+  body("phoneNumber").notEmpty(),
+  body("email").isEmail().withMessage("Email is not valid"),
+  handleInputErrors,
+  createNewUser
+);
+app.post(
+  "/signin",
+  body("email").isEmail().withMessage("Email is not valid"),
+  handleInputErrors,
+  signin
+);
 
 // creates and starts a server for our API on a defined port
 app.listen(port, () => {

@@ -1,15 +1,20 @@
 import prisma from "../db";
 
 export const getProjects = async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: req.user.id
-    },
-    include: {
-      projects: true
-    }
-  });
-  res.json({ status: "success", data: user.projects, errors: [] });
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.user.id
+      },
+      include: {
+        projects: true
+      }
+    });
+    res.json({ status: "success", data: user.projects, errors: [] });
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
+  }
 };
 
 export const getProject = async (req, res) => {
@@ -24,39 +29,48 @@ export const getProject = async (req, res) => {
 };
 
 export const createProject = async (req, res) => {
-  const project = await prisma.project.create({
-    data: {
-      name: req.body.name,
-      type: req.body.type,
-      location: req.body.location,
-      latitude: req.body.latitude,
-      longitude: req.body.longitude,
-      belongsToId: req.user.id
-    }
-  });
-  res.json({ status: "success", data: project, errors: [] });
-};
-
-export const updateProject = async (req, res) => {
-  const projectId = req.params.id;
-  const projectDetails = await prisma.project.findFirst({
-    where: {
-      id: projectId
-    }
-  });
-  if (projectDetails) {
-    const project = await prisma.project.update({
-      where: {
-        id: projectId
-      },
+  try {
+    const project = await prisma.project.create({
       data: {
-        ...req.body
+        name: req.body.name,
+        type: req.body.type,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        belongsToId: req.user.id
       }
     });
     res.json({ status: "success", data: project, errors: [] });
-  } else {
-    res.status(404);
-    res.send({ message: "Project does not exist" });
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
+  }
+};
+
+export const updateProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const project = await prisma.project.update({
+        where: {
+          id: projectId
+        },
+        data: {
+          ...req.body
+        }
+      });
+      res.json({ status: "success", data: project, errors: [] });
+    } else {
+      res.status(404);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
   }
 };
 
@@ -67,31 +81,36 @@ export const createProjectInvitation = async (req, res) => {
       id: projectId
     }
   });
-  if (projectDetails.type === "team") {
-    const inviteeDetails = await prisma.projectInvitation.findFirst({
-      where: {
-        inviteeId: req.body.memberId
-      }
-    });
-    console.log("=====inviteeDetails", inviteeDetails);
-    if (!inviteeDetails) {
-      const projectInvitation = await prisma.projectInvitation.create({
-        data: {
-          userId: req.user.id,
-          inviteeId: req.body.memberId,
-          status: "not-accepted",
-          role: req.body.role,
-          projectId: projectId
+  if (projectDetails) {
+    if (projectDetails.type === "team") {
+      const inviteeDetails = await prisma.projectInvitation.findFirst({
+        where: {
+          inviteeId: req.body.memberId
         }
       });
-      res.json({ status: "success", data: projectInvitation, errors: [] });
+      console.log("=====inviteeDetails", inviteeDetails);
+      if (!inviteeDetails) {
+        const projectInvitation = await prisma.projectInvitation.create({
+          data: {
+            userId: req.user.id,
+            inviteeId: req.body.memberId,
+            status: "not-accepted",
+            role: req.body.role,
+            projectId: projectId
+          }
+        });
+        res.json({ status: "success", data: projectInvitation, errors: [] });
+      } else {
+        res.status(422);
+        res.send({ message: "Project invitation already existed" });
+      }
     } else {
       res.status(422);
-      res.send({ message: "Project invitation already existed" });
+      res.send({ message: "Project does not allow adding members" });
     }
   } else {
     res.status(422);
-    res.send({ message: "Project does not allow adding members" });
+    res.send({ message: "Project does not exist" });
   }
 };
 
