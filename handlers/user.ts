@@ -12,8 +12,9 @@ export const createNewUser = async (req, res) => {
         phoneNumber: req.body.phoneNumber
       }
     });
+    const { password, ...rest } = user;
     const token = createJWT(user);
-    res.json({ token });
+    res.json({ user: user, token: token });
   } catch (error) {
     console.log("=error", error);
     res.status(422);
@@ -39,9 +40,10 @@ export const signin = async (req, res, next) => {
       res.send({ status: "failed", error: "Invalid Password" });
       return;
     }
-
     const token = createJWT(user);
-    res.json({ token });
+    const { password, ...rest } = user;
+
+    res.json({ user: rest, token });
   } catch (error) {
     next(error);
   }

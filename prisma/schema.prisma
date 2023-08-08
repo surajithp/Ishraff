@@ -11,30 +11,73 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(uuid())
-  username    String    @unique
-  createdAt   DateTime  @default(now())
-  password    String
-  phoneNumber String
-  email       String    @unique
-  projects    Project[]
+  id                          String               @id @default(uuid())
+  username                    String
+  createdAt                   DateTime             @default(now())
+  password                    String
+  phoneNumber                 String
+  email                       String               @unique
+  projects                    Project[]
+  ProjectMember               ProjectMember[]
+  receivedPlatformInvitations PlatformInvitation[] @relation(name: "Invitee")
+  sentPlatformInvitations     PlatformInvitation[] @relation(name: "User")
+  receivedProjectInvitations  ProjectInvitation[]  @relation(name: "Invitee User")
+  sentProjectInvitations      ProjectInvitation[]  @relation(name: "Invited User")
+}
+
+model PlatformInvitation {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+  senderId   String
+  senderName String?
+  user       User     @relation("User", fields: [senderId], references: [id])
+  receiverId String
+  invitee    User     @relation("Invitee", fields: [receiverId], references: [id])
+  status     String
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  createdAt   DateTime @default(now())
-  name        String   @unique
-  type        String
-  location    String
-  latitude    Float
-  longitude   Float
-  startDate   DateTime?
-  endDate     DateTime?
-  client      String?
-  description String?
-  belongsToId String
-  belongsTo   User     @relation(fields: [belongsToId], references: [id])
-  Update      Update[]
+  id                String              @id @default(uuid())
+  createdAt         DateTime            @default(now())
+  name              String              @unique
+  type              ProjectType         @default(self)
+  location          String?
+  latitude          Float
+  longitude         Float
+  startDate         DateTime?
+  endDate           DateTime?
+  client            String?
+  description       String?
+  belongsToId       String
+  belongsTo         User                @relation(fields: [belongsToId], references: [id])
+  Update            Update[]
+  ProjectMember     ProjectMember[]
+  ProjectInvitation ProjectInvitation[]
+}
+
+model ProjectInvitation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  invitedBy User     @relation("Invited User", fields: [userId], references: [id])
+  userId    String
+  inviteeId String
+  invitee   User     @relation("Invitee User", fields: [inviteeId], references: [id])
+  role      Role     @default(manager)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  status    String
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  role      Role
+  projectId String
+  belongsTo Project  @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum UPDATE_STATUS {
@@ -42,6 +85,17 @@ enum UPDATE_STATUS {
   IN_PROGRESS
   COMPLETED
   ARCHIVED
+}
+
+enum Role {
+  manager
+  worker
+  guest
+}
+
+enum ProjectType {
+  self
+  team
 }
 
 model Update {
