@@ -75,42 +75,61 @@ export const updateProject = async (req, res) => {
 };
 
 export const createProjectInvitation = async (req, res) => {
-  const projectId = req.params.id;
-  const projectDetails = await prisma.project.findFirst({
-    where: {
-      id: projectId
-    }
-  });
-  if (projectDetails) {
-    if (projectDetails.type === "team") {
-      const inviteeDetails = await prisma.projectInvitation.findFirst({
-        where: {
-          inviteeId: req.body.memberId
-        }
-      });
-      console.log("=====inviteeDetails", inviteeDetails);
-      if (!inviteeDetails) {
-        const projectInvitation = await prisma.projectInvitation.create({
-          data: {
-            userId: req.user.id,
-            inviteeId: req.body.memberId,
-            status: "not-accepted",
-            role: req.body.role,
-            projectId: projectId
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      if (projectDetails.type === "team") {
+        const inviteeUserDetails = await prisma.user.findFirst({
+          where: {
+            id: req.body.memberId
           }
         });
-        res.json({ status: "success", data: projectInvitation, errors: [] });
+        if (!inviteeUserDetails) {
+          res.status(422);
+          res.send({ message: "Member does not exist" });
+        } else {
+          const inviteeDetails = await prisma.projectInvitation.findFirst({
+            where: {
+              inviteeId: req.body.memberId
+            }
+          });
+          console.log("=====inviteeDetails", inviteeDetails, req.body);
+          if (!inviteeDetails) {
+            const projectInvitation = await prisma.projectInvitation.create({
+              data: {
+                userId: req.user.id,
+                inviteeId: req.body.memberId,
+                status: "not-accepted",
+                role: req.body.role,
+                projectId: projectId
+              }
+            });
+            res.json({
+              status: "success",
+              data: projectInvitation,
+              errors: []
+            });
+          } else {
+            res.status(422);
+            res.send({ message: "Project invitation already existed" });
+          }
+        }
       } else {
         res.status(422);
-        res.send({ message: "Project invitation already existed" });
+        res.send({ message: "Project does not allow adding members" });
       }
     } else {
       res.status(422);
-      res.send({ message: "Project does not allow adding members" });
+      res.send({ message: "Project does not exist" });
     }
-  } else {
+  } catch (error) {
     res.status(422);
-    res.send({ message: "Project does not exist" });
+    res.send({ message: error });
   }
 };
 
