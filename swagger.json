@@ -13,7 +13,7 @@
     }
   },
   "schemes": ["http"],
-  "host": "44.211.138.233",
+  "host": "http:://54.89.213.162/",
   "basePath": "",
   "paths": {
     "/signup": {
@@ -109,7 +109,7 @@
         }
       }
     },
-    "/api/platform/invitation/": {
+    "/api/platform/invitation": {
       "get": {
         "summary": "Get Platform invitation code",
         "description": "Get Platform invitation code",
@@ -161,7 +161,7 @@
         }
       }
     },
-    "/api/project/": {
+    "/api/project": {
       "post": {
         "summary": "Create Project",
         "description": "Create Project",
@@ -179,7 +179,8 @@
                   "type": "string"
                 },
                 "type": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": ["self,team"]
                 },
                 "latitude": {
                   "type": "number"
@@ -221,6 +222,19 @@
             "schema": {
               "type": "object",
               "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["self,team"]
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
                 "location": {
                   "type": "string"
                 },
@@ -321,7 +335,8 @@
                   "type": "string"
                 },
                 "role": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": ["manager,worker,guest"]
                 }
               }
             }
@@ -417,9 +432,16 @@
               "type": "string"
             },
             "role": {
-              "type": "string"
+              "type": "string",
+              "enum": ["manager", "worker", "guest"]
             },
             "status": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
               "type": "string"
             }
           }

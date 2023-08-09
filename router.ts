@@ -20,7 +20,7 @@ import {
 
 const router = Router();
 
-router.get("/platform/invitation/", generateInvitationCode);
+router.get("/platform/invitation", generateInvitationCode);
 
 router.get("/platform/users", getPlatformUsers);
 
