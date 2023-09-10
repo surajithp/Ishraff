@@ -1,6 +1,6 @@
 import router from "./router";
 import { createNewUser, resetPassword, signin } from "./handlers/user";
-export { logger as LOGGER } from "./winston";
+// export { logger as LOGGER } from "./winston";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
 import * as dotenv from "dotenv";

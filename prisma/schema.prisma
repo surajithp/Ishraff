@@ -24,7 +24,7 @@ model User {
   receivedProjectInvitations  ProjectInvitation[]  @relation(name: "Invitee User")
   sentProjectInvitations      ProjectInvitation[]  @relation(name: "Invited User")
   Task                        Task[]
-  taskUpdate                  TaskUpdate[]
+  TaskUpdate                  TaskUpdate[]
 }
 
 model PlatformInvitation {
@@ -58,7 +58,7 @@ model Project {
   ProjectInvitation ProjectInvitation[]
   Task              Task[]
   ProjectAttachment ProjectAttachment[]
-  taskUpdate        TaskUpdate[]
+  TaskUpdate        TaskUpdate[]
 }
 
 model ProjectAttachment {
@@ -123,7 +123,7 @@ model Task {
   isArchived    Boolean       @default(false)
   startDate     DateTime?
   endDate       DateTime?
-  taskUpdate    TaskUpdate[]
+  TaskUpdate    TaskUpdate[]
 }
 
 model TaskUpdate {
