@@ -1,4 +1,11 @@
 import prisma from "../db";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command
+} from "@aws-sdk/client-s3";
+import { slugifyString } from "../modules/utils";
 
 export const getProjects = async (req, res) => {
   try {
@@ -23,6 +30,14 @@ export const getProject = async (req, res) => {
     where: {
       id: projectId,
       belongsToId: req.user.id
+    },
+    include: {
+      Task: {
+        include: {
+          managedBy: true,
+          assignedTo: true
+        }
+      }
     }
   });
   res.json({ status: "success", data: project, errors: [] });
@@ -198,5 +213,154 @@ export const getProjectMembers = async (req, res) => {
       }
     });
     res.json({ status: "success", data: projectMembers, errors: [] });
+  }
+};
+
+export const createProjectAttachment = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const projectMember = await prisma.user.findFirst({
+        where: {
+          id: req.body.memberId
+        }
+      });
+      if (projectMember) {
+        const fileName = req.file.originalname;
+        const fileType = req.file.mimetype;
+        const objectKey = `${slugifyString(
+          Date.now().toString()
+        )}-${slugifyString(fileName)}`;
+        const S3 = new S3Client({
+          region: "auto",
+          endpoint: process.env.ENDPOINT,
+          credentials: {
+            accessKeyId: process.env.R2_ACCESS_KEY_ID,
+            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+          }
+        });
+        const response = await S3.send(
+          new PutObjectCommand({
+            Body: req.file.buffer,
+            Bucket: process.env.BUCKET_NAME,
+            Key: objectKey,
+            ContentType: fileType
+          })
+        );
+        if (response) {
+          const fileSize = parseInt(req.headers["content-length"]);
+          const attachment = await prisma.projectAttachment.create({
+            data: {
+              projectId: projectId,
+              memberId: projectMember.id,
+              attachementFileKey: objectKey,
+              attachmentSize: fileSize,
+              attachmentType: fileType
+            }
+          });
+          res.json({
+            status: "success",
+            data: attachment,
+            errors: []
+          });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Project Member does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
+  }
+};
+
+export const deleteProjectAttachment = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const projectMember = await prisma.user.findFirst({
+        where: {
+          id: req.body.memberId
+        }
+      });
+      if (projectMember) {
+        const attachmentId = req.params.attachmentId;
+        const attachment = await prisma.projectAttachment.findFirst({
+          where: {
+            id: attachmentId
+          }
+        });
+        if (attachment) {
+          const response = await prisma.projectAttachment.delete({
+            where: {
+              id: attachmentId
+            }
+          });
+          if (response) {
+            res.json({
+              status: "success",
+              data: {
+                message: "Attachment deleted successfully"
+              },
+              errors: []
+            });
+          }
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Project Member does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
+  }
+};
+
+export const getProjectAttachments = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const attachments = await prisma.projectAttachment.findMany({
+        where: {
+          projectId: projectId
+        }
+      });
+      if (attachments) {
+        res.json({
+          status: "success",
+          data: attachments,
+          errors: []
+        });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
   }
 };

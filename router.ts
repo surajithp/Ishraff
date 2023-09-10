@@ -10,8 +10,10 @@ import {
   getPlatformUsers,
   createProjectInvitation,
   getProjectInvitations,
+  createProjectAttachment,
   updateProject
 } from "./handlers/project";
+import { createProjectTask, getProjectTasks } from "./handlers/task";
 import {
   generateInvitationCode,
   createPlatformInvitation,
@@ -78,10 +80,22 @@ router.post(
   createProjectInvitation
 );
 
+router.post(
+  "/project/:id/attachment/upload",
+  body("projectId").notEmpty().withMessage("Member Id should not be empty"),
+  body("memberId").notEmpty().withMessage("Member Id should not be empty"),
+  handleInputErrors,
+  createProjectAttachment
+);
+
 router.get("/project/:id/invitations", getProjectInvitations);
 
-router.post("/project/member/invitation", createProjectMember);
+router.post("/project/:id/members", createProjectMember);
 
 router.get("/project/:id/members", getProjectMembers);
+
+router.post("/project/:id/tasks", createProjectTask);
+
+router.get("/project/:id/tasks", getProjectTasks);
 
 export default router;

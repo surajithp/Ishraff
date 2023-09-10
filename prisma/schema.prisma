@@ -23,6 +23,8 @@ model User {
   sentPlatformInvitations     PlatformInvitation[] @relation(name: "User")
   receivedProjectInvitations  ProjectInvitation[]  @relation(name: "Invitee User")
   sentProjectInvitations      ProjectInvitation[]  @relation(name: "Invited User")
+  Task                        Task[]
+  taskUpdate                  TaskUpdate[]
 }
 
 model PlatformInvitation {
@@ -54,6 +56,21 @@ model Project {
   Update            Update[]
   ProjectMember     ProjectMember[]
   ProjectInvitation ProjectInvitation[]
+  Task              Task[]
+  ProjectAttachment ProjectAttachment[]
+  taskUpdate        TaskUpdate[]
+}
+
+model ProjectAttachment {
+  id                 String        @id @default(uuid())
+  createdAt          DateTime      @default(now())
+  projectId          String
+  project            Project       @relation(fields: [projectId], references: [id])
+  attachmentType     String
+  attachmentSize     BigInt
+  attachementFileKey String
+  memberId           String
+  member             ProjectMember @relation(fields: [memberId], references: [id])
 }
 
 model ProjectInvitation {
@@ -71,13 +88,83 @@ model ProjectInvitation {
 }
 
 model ProjectMember {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  role      Role
-  projectId String
-  belongsTo Project  @relation(fields: [projectId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id                String              @id @default(uuid())
+  createdAt         DateTime            @default(now())
+  role              Role
+  projectId         String
+  belongsTo         Project             @relation(fields: [projectId], references: [id])
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  ProjectAttachment ProjectAttachment[]
+  tasksAssigned     Task[]              @relation(name: "AssignedTo")
+  tasksManaged      Task[]              @relation(name: "ManagedBy")
+  UpdateComments    UpdateComments[]
+}
+
+model Task {
+  id            String        @id @default(uuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  reopenedAt    DateTime
+  assignedAt    DateTime      @default(now())
+  name          String        @unique
+  memberId      String
+  description   String
+  assignedTo    ProjectMember @relation("AssignedTo", fields: [memberId], references: [id])
+  managedBy     ProjectMember @relation("ManagedBy", fields: [managedUserId], references: [id])
+  managedUserId String
+  createdBy     User          @relation(fields: [userId], references: [id])
+  userId        String
+  status        TASK_STATUS
+  belongsTo     Project       @relation(fields: [projectId], references: [id])
+  projectId     String
+  isCompleted   Boolean       @default(false)
+  isReopened    Boolean       @default(false)
+  isArchived    Boolean       @default(false)
+  startDate     DateTime?
+  endDate       DateTime?
+  taskUpdate    TaskUpdate[]
+}
+
+model TaskUpdate {
+  id                 String           @id @default(uuid())
+  createdAt          DateTime         @default(now())
+  submittedOn        DateTime
+  description        String
+  projectId          String
+  project            Project          @relation(fields: [projectId], references: [id])
+  taskId             String
+  task               Task             @relation(fields: [taskId], references: [id])
+  status             UPDATE_STATUS
+  createdBy          User             @relation(fields: [userId], references: [id])
+  userId             String
+  attachmentType     String
+  attachmentSize     BigInt
+  attachementFileKey String
+  rating             Float
+  isFlagged          Boolean          @default(false)
+  latitude           Float
+  longitude          Float
+  UpdateComments     UpdateComments[]
+}
+
+model UpdateComments {
+  id            String        @id @default(uuid())
+  createdAt     DateTime      @default(now())
+  memberId      String
+  projectMember ProjectMember @relation(fields: [memberId], references: [id])
+  taskUpdateId  String
+  belongsTo     TaskUpdate    @relation(fields: [taskUpdateId], references: [id])
+  comment       String
+}
+
+enum TASK_STATUS {
+  DRAFT
+  IN_PROGRESS
+  IN_REVIEW
+  COMPLETED
+  ARCHIVED
+  REOPENED
 }
 
 enum UPDATE_STATUS {

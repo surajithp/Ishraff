@@ -48,3 +48,35 @@ export const signin = async (req, res, next) => {
     next(error);
   }
 };
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: req.body.email }
+    });
+
+    if (!user) {
+      res.status(401);
+      res.send({ status: "failed", error: "Invalid email" });
+      return;
+    }
+
+    const hash = await hashPassword(req.body.password);
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: user.id
+      },
+      data: {
+        password: hash
+      }
+    });
+
+    const token = createJWT(updatedUser);
+    const { password, ...rest } = updatedUser;
+
+    res.json({ user: rest, token });
+  } catch (error) {
+    next(error);
+  }
+};
