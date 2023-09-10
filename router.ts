@@ -13,12 +13,21 @@ import {
   createProjectAttachment,
   updateProject
 } from "./handlers/project";
-import { createProjectTask, getProjectTasks } from "./handlers/task";
+import {
+  createProjectTask,
+  getProjectTasks,
+  updateProjectTask
+} from "./handlers/task";
 import {
   generateInvitationCode,
   createPlatformInvitation,
   getUserPlatformInvitations
 } from "./handlers/invitation";
+import {
+  createTaskUpdate,
+  createTaskUpdateComment,
+  getProjectUpdates
+} from "./handlers/taskUpdate";
 
 const router = Router();
 
@@ -96,6 +105,17 @@ router.get("/project/:id/members", getProjectMembers);
 
 router.post("/project/:id/tasks", createProjectTask);
 
+router.patch("/project/:id/tasks/:taskId", updateProjectTask);
+
 router.get("/project/:id/tasks", getProjectTasks);
+
+router.post("/project/:id/updates", getProjectUpdates);
+
+router.post("/project/:id/tasks/:taskId/update", createTaskUpdate);
+
+router.post(
+  "/project/:id/tasks/:taskId/update/:updateId",
+  createTaskUpdateComment
+);
 
 export default router;
