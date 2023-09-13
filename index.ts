@@ -3,6 +3,7 @@ import { createNewUser, signin } from "./handlers/user";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
 import { userDataValidate } from "./validations/uservalidation";
+import { Prisma } from "@prisma/client";
 import * as dotenv from "dotenv";
 import cors from "cors";
 import { protect } from "./modules/auth";
@@ -54,6 +55,30 @@ app.post(
   handleInputErrors,
   signin
 );
+
+app.use((err, req, res, next) => {
+  console.log("=err", err);
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === "P2002") {
+      res.status(400);
+      res.send({
+        message: `Duplicate field value: ${err.meta.target}`
+      });
+    }
+  } else if (err instanceof Prisma.PrismaClientInitializationError) {
+    if (err.errorCode === "P1001") {
+      res.status(503);
+      res.send({
+        message: `Service is temporary unavailable`
+      });
+    }
+  } else {
+    res.status(500);
+    res.send({
+      message: `Internal server error`
+    });
+  }
+});
 
 // creates and starts a server for our API on a defined port
 app.listen(port, () => {
