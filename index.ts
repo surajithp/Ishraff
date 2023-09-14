@@ -3,6 +3,7 @@ import { createNewUser, signin } from "./handlers/user";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
 import { userDataValidate } from "./validations/uservalidation";
+import { Prisma } from "@prisma/client";
 import * as dotenv from "dotenv";
 import cors from "cors";
 import { protect } from "./modules/auth";
@@ -54,6 +55,54 @@ app.post(
   handleInputErrors,
   signin
 );
+
+app.use((err, req, res, next) => {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (err.code) {
+      case "P2002":
+        // handling duplicate key errors
+        res.status(400);
+        res.send({
+          message: `Duplicate field value: ${err.meta.target}`
+        });
+      case "P2014":
+        // handling invalid id errors
+        res.status(400);
+        res.send({
+          message: `Invalid ID: ${err.meta.target}`
+        });
+      case "P2003":
+        // handling invalid data errors
+        res.status(400);
+        res.send({
+          message: `Invalid input data: ${err.meta.target}`
+        });
+      default:
+        // handling all other errors
+        res.status(500);
+        res.send({
+          message: `Something went wrong: ${err.message}`
+        });
+    }
+  } else if (err instanceof Prisma.PrismaClientInitializationError) {
+    if (err.errorCode === "P1001") {
+      res.status(503);
+      res.send({
+        message: `Service is temporary unavailable`
+      });
+    } else {
+      res.status(503);
+      res.send({
+        message: `Service is temporary unavailable`
+      });
+    }
+  } else {
+    res.status(500);
+    res.send({
+      message: `Internal server error`
+    });
+  }
+});
 
 // creates and starts a server for our API on a defined port
 app.listen(port, () => {

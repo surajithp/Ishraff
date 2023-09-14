@@ -15,7 +15,7 @@ model User {
   username                    String
   createdAt                   DateTime             @default(now())
   password                    String
-  phoneNumber                 String
+  phoneNumber                 String               @unique
   email                       String               @unique
   projects                    Project[]
   ProjectMember               ProjectMember[]
