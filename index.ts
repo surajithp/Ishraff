@@ -57,16 +57,40 @@ app.post(
 );
 
 app.use((err, req, res, next) => {
-  console.log("=err", err);
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2002") {
-      res.status(400);
-      res.send({
-        message: `Duplicate field value: ${err.meta.target}`
-      });
+    switch (err.code) {
+      case "P2002":
+        // handling duplicate key errors
+        res.status(400);
+        res.send({
+          message: `Duplicate field value: ${err.meta.target}`
+        });
+      case "P2014":
+        // handling invalid id errors
+        res.status(400);
+        res.send({
+          message: `Invalid ID: ${err.meta.target}`
+        });
+      case "P2003":
+        // handling invalid data errors
+        res.status(400);
+        res.send({
+          message: `Invalid input data: ${err.meta.target}`
+        });
+      default:
+        // handling all other errors
+        res.status(500);
+        res.send({
+          message: `Something went wrong: ${err.message}`
+        });
     }
   } else if (err instanceof Prisma.PrismaClientInitializationError) {
     if (err.errorCode === "P1001") {
+      res.status(503);
+      res.send({
+        message: `Service is temporary unavailable`
+      });
+    } else {
       res.status(503);
       res.send({
         message: `Service is temporary unavailable`

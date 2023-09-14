@@ -153,7 +153,7 @@ export const getProjectInvitations = async (req, res) => {
   } catch (error) {}
 };
 
-export const createProjectMember = async (req, res) => {
+export const createProjectMember = async (req, res, next) => {
   try {
     const member = await prisma.projectMember.create({
       data: {
@@ -163,10 +163,12 @@ export const createProjectMember = async (req, res) => {
       }
     });
     res.json({ status: "success", data: member, errors: [] });
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getPlatformUsers = async (req, res) => {
+export const getPlatformUsers = async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -178,7 +180,9 @@ export const getPlatformUsers = async (req, res) => {
       }
     });
     res.json({ status: "success", data: users, errors: [] });
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getProjectMembers = async (req, res) => {
