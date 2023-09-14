@@ -1,7 +1,7 @@
 import prisma from "../db";
 import { createJWT, hashPassword, comparePasswords } from "../modules/auth";
 
-export const createNewUser = async (req, res) => {
+export const createNewUser = async (req, res, next) => {
   const hash = await hashPassword(req.body.password);
   try {
     const user = await prisma.user.create({
@@ -16,9 +16,7 @@ export const createNewUser = async (req, res) => {
     const token = createJWT(user);
     res.json({ user: user, token: token });
   } catch (error) {
-    console.log("=error", error);
-    res.status(422);
-    res.send({ message: "User already exists with this email" });
+    next(error);
   }
 };
 

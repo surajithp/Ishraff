@@ -25,22 +25,27 @@ export const getProjects = async (req, res) => {
 };
 
 export const getProject = async (req, res) => {
-  const projectId = req.params.id;
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      belongsToId: req.user.id
-    },
-    include: {
-      Task: {
-        include: {
-          managedBy: true,
-          assignedTo: true
+  try {
+    const projectId = req.params.id;
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        belongsToId: req.user.id
+      },
+      include: {
+        Task: {
+          include: {
+            managedBy: true,
+            assignedTo: true
+          }
         }
       }
-    }
-  });
-  res.json({ status: "success", data: project, errors: [] });
+    });
+    res.json({ status: "success", data: project, errors: [] });
+  } catch (error) {
+    res.status(404);
+    res.send({ message: "Not found" });
+  }
 };
 
 export const createProject = async (req, res) => {
@@ -113,7 +118,6 @@ export const createProjectInvitation = async (req, res) => {
               inviteeId: req.body.memberId
             }
           });
-          console.log("=====inviteeDetails", inviteeDetails, req.body);
           if (!inviteeDetails) {
             const projectInvitation = await prisma.projectInvitation.create({
               data: {
@@ -149,48 +153,56 @@ export const createProjectInvitation = async (req, res) => {
 };
 
 export const getProjectInvitations = async (req, res) => {
-  const projectId = req.params.id;
-  console.log("==projectId", projectId);
-  const projectInvitation = await prisma.projectInvitation.findMany({
-    where: {
-      projectId: projectId,
-      userId: req.user.id
-    },
-    include: {
-      invitee: true
-    }
-  });
-  res.json({ status: "success", data: projectInvitation, errors: [] });
+  try {
+    const projectId = req.params.id;
+    const projectInvitation = await prisma.projectInvitation.findMany({
+      where: {
+        projectId: projectId,
+        userId: req.user.id
+      },
+      include: {
+        invitee: true
+      }
+    });
+    res.json({ status: "success", data: projectInvitation, errors: [] });
+  } catch (error) {}
 };
 
-export const createProjectMember = async (req, res) => {
-  const member = await prisma.projectMember.create({
-    data: {
-      role: req.body.role,
-      userId: req.body.userId,
-      projectId: req.body.projectId
-    }
-  });
-  res.json({ status: "success", data: member, errors: [] });
+export const createProjectMember = async (req, res, next) => {
+  try {
+    const member = await prisma.projectMember.create({
+      data: {
+        role: req.body.role,
+        userId: req.body.userId,
+        projectId: req.body.projectId
+      }
+    });
+    res.json({ status: "success", data: member, errors: [] });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getPlatformUsers = async (req, res) => {
-  const users = await prisma.user.findMany({
-    select: {
-      email: true,
-      username: true,
-      phoneNumber: true,
-      id: true,
-      password: false
-    }
-  });
-  res.json({ status: "success", data: users, errors: [] });
+export const getPlatformUsers = async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        email: true,
+        username: true,
+        phoneNumber: true,
+        id: true,
+        password: false
+      }
+    });
+    res.json({ status: "success", data: users, errors: [] });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getProjectMembers = async (req, res) => {
   const projectId = req.params.id;
   const role = req.query.role;
-  console.log("=role", role);
   if (role) {
     const projectMembers = await prisma.projectMember.findMany({
       where: {
