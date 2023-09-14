@@ -48,7 +48,7 @@ export const getProject = async (req, res) => {
   }
 };
 
-export const createProject = async (req, res) => {
+export const createProject = async (req, res, next) => {
   try {
     const project = await prisma.project.create({
       data: {
@@ -61,8 +61,7 @@ export const createProject = async (req, res) => {
     });
     res.json({ status: "success", data: project, errors: [] });
   } catch (error) {
-    res.status(422);
-    res.send({ message: error });
+    next(error);
   }
 };
 
@@ -170,14 +169,89 @@ export const getProjectInvitations = async (req, res) => {
 
 export const createProjectMember = async (req, res, next) => {
   try {
-    const member = await prisma.projectMember.create({
-      data: {
-        role: req.body.role,
-        userId: req.body.userId,
-        projectId: req.body.projectId
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
       }
     });
-    res.json({ status: "success", data: member, errors: [] });
+    if (projectDetails) {
+      const member = await prisma.projectMember.create({
+        data: {
+          role: req.body.role,
+          userId: req.body.userId,
+          projectId: req.body.projectId
+        }
+      });
+      res.json({ status: "success", data: member, errors: [] });
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changeProjectMemberRole = async (req, res, next) => {
+  try {
+    const memberId = req.params.memberId;
+    const projectMember = await prisma.projectMember.findFirst({
+      where: {
+        id: memberId
+      }
+    });
+    if (projectMember) {
+      if (projectMember.role !== req.body.role) {
+        const projectMember = await prisma.projectMember.update({
+          where: {
+            id: memberId
+          },
+          data: {
+            role: req.body.role
+          }
+        });
+        res.json({ status: "success", data: projectMember, errors: [] });
+      } else {
+        res.status(422);
+        res.send({ message: "Project Member already have that role" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project Member does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteProjectMember = async (req, res, next) => {
+  try {
+    const memberId = req.params.memberId;
+    const projectMember = await prisma.projectMember.findFirst({
+      where: {
+        id: memberId
+      }
+    });
+    if (projectMember) {
+      const member = await prisma.projectMember.delete({
+        where: {
+          id: memberId
+        }
+      });
+      if (member) {
+        res.json({
+          status: "success",
+          message: "Project Member removed successfully"
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Project Member removal failed" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project Member does not exist" });
+    }
   } catch (error) {
     next(error);
   }

@@ -11,7 +11,9 @@ import {
   createProjectInvitation,
   getProjectInvitations,
   createProjectAttachment,
-  updateProject
+  updateProject,
+  deleteProjectMember,
+  changeProjectMemberRole
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -100,6 +102,14 @@ router.post(
 router.get("/project/:id/invitations", getProjectInvitations);
 
 router.post("/project/:id/members", createProjectMember);
+
+router.patch(
+  "/project/:id/members/:memberId/role",
+  body("role").notEmpty().withMessage("Role should not be empty"),
+  changeProjectMemberRole
+);
+
+router.delete("/project/:id/members/:memberId", deleteProjectMember);
 
 router.get("/project/:id/members", getProjectMembers);
 

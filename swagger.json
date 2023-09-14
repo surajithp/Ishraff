@@ -13,7 +13,7 @@
     }
   },
   "schemes": ["http"],
-  "host": "http:://54.89.213.162/",
+  "host": "3.86.185.218",
   "basePath": "",
   "paths": {
     "/signup": {
@@ -317,7 +317,7 @@
         }
       }
     },
-    "api/project/{projectId}/invitation": {
+    "/api/project/{projectId}/invitation": {
       "post": {
         "summary": "Create Project Invitation",
         "description": "Create Project Invitation",
@@ -358,7 +358,7 @@
         }
       }
     },
-    "api/project/{projectId}/invitations": {
+    "/api/project/{projectId}/invitations": {
       "get": {
         "summary": "Get Project Invitations",
         "description": "Get Project Invitations",
@@ -372,6 +372,120 @@
               "items": {
                 "$ref": "#/definitions/projectInvitationResponse"
               }
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/members": {
+      "post": {
+        "summary": "Create Project Member",
+        "description": "Create Project Member",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Project Member payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["manager,worker,guest"]
+                },
+                "userId": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectMemberResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/members/{memberId}": {
+      "delete": {
+        "summary": "Delete Project Member",
+        "description": "Delete Project Member",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Project Member payload",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectMemberResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/members/{memberId}/role": {
+      "post": {
+        "summary": "Update Project Member Role",
+        "description": "Update Project Member Role",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Update Project Member Role",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": ["manager,worker,guest"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectMemberResponse"
             }
           },
           "400": {
@@ -522,6 +636,41 @@
         },
         "errors": {
           "type": "array"
+        }
+      }
+    },
+    "projectMemberResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "userId": {
+              "type": "string"
+            },
+            "projectId": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string",
+              "enum": ["manager", "worker", "guest"]
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          }
         }
       }
     },
