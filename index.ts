@@ -112,6 +112,12 @@ app.use((err, req, res, next) => {
         message: `Service is temporary unavailable`
       });
     }
+  } else if (err instanceof Prisma.PrismaClientValidationError) {
+    console.log("=err", err);
+    res.status(422);
+    res.send({
+      message: err.message
+    });
   } else {
     res.status(500);
     res.send({

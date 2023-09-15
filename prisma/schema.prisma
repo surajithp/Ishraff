@@ -23,8 +23,8 @@ model User {
   sentPlatformInvitations     PlatformInvitation[] @relation(name: "User")
   receivedProjectInvitations  ProjectInvitation[]  @relation(name: "Invitee User")
   sentProjectInvitations      ProjectInvitation[]  @relation(name: "Invited User")
-  Task                        Task[]
   TaskUpdate                  TaskUpdate[]
+  ProjectTask                 ProjectTask[]
 }
 
 model PlatformInvitation {
@@ -56,9 +56,9 @@ model Project {
   Update            Update[]
   ProjectMember     ProjectMember[]
   ProjectInvitation ProjectInvitation[]
-  Task              Task[]
   ProjectAttachment ProjectAttachment[]
   TaskUpdate        TaskUpdate[]
+  ProjectTask       ProjectTask[]
 }
 
 model ProjectAttachment {
@@ -96,27 +96,23 @@ model ProjectMember {
   userId            String
   user              User                @relation(fields: [userId], references: [id])
   ProjectAttachment ProjectAttachment[]
-  tasksAssigned     Task[]              @relation(name: "AssignedTo")
-  tasksManaged      Task[]              @relation(name: "ManagedBy")
   UpdateComments    UpdateComments[]
+  ProjectTask       ProjectTask[]
 }
 
-model Task {
+model ProjectTask {
   id            String        @id @default(uuid())
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  reopenedAt    DateTime
-  assignedAt    DateTime      @default(now())
-  name          String        @unique
-  memberId      String
+  updatedAt     DateTime      @default(now())
+  name          String
   description   String
-  assignedTo    ProjectMember @relation("AssignedTo", fields: [memberId], references: [id])
-  managedBy     ProjectMember @relation("ManagedBy", fields: [managedUserId], references: [id])
-  managedUserId String
+  memberId      String
+  assignedTo    ProjectMember @relation(fields: [memberId], references: [id])
+  belongsTo     Project       @relation(fields: [projectId], references: [id])
   createdBy     User          @relation(fields: [userId], references: [id])
+  managedUserId String
   userId        String
   status        TASK_STATUS
-  belongsTo     Project       @relation(fields: [projectId], references: [id])
   projectId     String
   isCompleted   Boolean       @default(false)
   isReopened    Boolean       @default(false)
@@ -129,22 +125,22 @@ model Task {
 model TaskUpdate {
   id                 String           @id @default(uuid())
   createdAt          DateTime         @default(now())
-  submittedOn        DateTime
+  submittedOn        DateTime?
   description        String
   projectId          String
   project            Project          @relation(fields: [projectId], references: [id])
   taskId             String
-  task               Task             @relation(fields: [taskId], references: [id])
+  task               ProjectTask      @relation(fields: [taskId], references: [id])
   status             UPDATE_STATUS
   createdBy          User             @relation(fields: [userId], references: [id])
   userId             String
-  attachmentType     String
-  attachmentSize     BigInt
-  attachementFileKey String
-  rating             Float
+  attachmentType     String?
+  attachmentSize     BigInt?
+  attachementFileKey String?
+  rating             Float?
   isFlagged          Boolean          @default(false)
-  latitude           Float
-  longitude          Float
+  latitude           Float?
+  longitude          Float?
   UpdateComments     UpdateComments[]
 }
 

@@ -7,6 +7,7 @@ import {
   getProjects,
   createProjectMember,
   getProjectMembers,
+  getProjectMember,
   getPlatformUsers,
   createProjectInvitation,
   getProjectInvitations,
@@ -28,7 +29,9 @@ import {
 import {
   createTaskUpdate,
   createTaskUpdateComment,
-  getProjectUpdates
+  getTaskUpdateComments,
+  getProjectUpdates,
+  getTaskUpdates
 } from "./handlers/taskUpdate";
 
 const router = Router();
@@ -109,6 +112,8 @@ router.patch(
   changeProjectMemberRole
 );
 
+router.get("/project/:id/members/:memberId", getProjectMember);
+
 router.delete("/project/:id/members/:memberId", deleteProjectMember);
 
 router.get("/project/:id/members", getProjectMembers);
@@ -119,13 +124,20 @@ router.patch("/project/:id/tasks/:taskId", updateProjectTask);
 
 router.get("/project/:id/tasks", getProjectTasks);
 
-router.post("/project/:id/updates", getProjectUpdates);
+router.get("/project/:id/updates", getProjectUpdates);
+
+router.get("/project/:id/tasks/:taskId/updates", getTaskUpdates);
 
 router.post("/project/:id/tasks/:taskId/update", createTaskUpdate);
 
 router.post(
-  "/project/:id/tasks/:taskId/update/:updateId",
+  "/project/:id/tasks/:taskId/update/:updateId/comments",
   createTaskUpdateComment
+);
+
+router.get(
+  "/project/:id/tasks/:taskId/update/:updateId/comments",
+  getTaskUpdateComments
 );
 
 export default router;

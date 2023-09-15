@@ -33,9 +33,8 @@ export const getProject = async (req, res) => {
         belongsToId: req.user.id
       },
       include: {
-        Task: {
+        ProjectTask: {
           include: {
-            managedBy: true,
             assignedTo: true
           }
         }
@@ -184,6 +183,32 @@ export const createProjectMember = async (req, res, next) => {
         }
       });
       res.json({ status: "success", data: member, errors: [] });
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProjectMember = async (req, res, next) => {
+  console.log("===entered");
+  try {
+    const projectId = req.params.id;
+    const memberId = req.params.memberId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          id: memberId
+        }
+      });
+      res.json({ status: "success", data: projectMember, errors: [] });
     } else {
       res.status(422);
       res.send({ message: "Project does not exist" });
