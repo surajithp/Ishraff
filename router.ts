@@ -14,7 +14,8 @@ import {
   createProjectAttachment,
   updateProject,
   deleteProjectMember,
-  changeProjectMemberRole
+  changeProjectMemberRole,
+  updateProjectInvitation
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -92,6 +93,13 @@ router.post(
   body("role").notEmpty().withMessage("Role should not be empty"),
   handleInputErrors,
   createProjectInvitation
+);
+
+router.patch(
+  "/project/:id/invitation/:invitationId",
+  body("status").notEmpty().withMessage("status should not be empty"),
+  handleInputErrors,
+  updateProjectInvitation
 );
 
 router.post(

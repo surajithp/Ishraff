@@ -15,31 +15,44 @@ export const createProjectTask = async (req, res, next) => {
         }
       });
       if (memberDetails) {
+        let isEligibleToCreateTask =
+          memberDetails.role === "manager" || memberDetails.role === "admin";
         let userId = req.body.userId;
         if (!userId) {
           userId = req.user.id;
         }
-        const task = await prisma.projectTask.create({
-          data: {
-            name: req.body.name,
-            userId: userId,
-            description: req.body.description,
-            memberId: req.body.memberId,
-            projectId: projectId,
-            managedUserId: userId,
-            updatedAt: new Date().toISOString(),
-            status: "DRAFT"
-          }
-        });
-        if (task) {
-          res.json({
-            status: "success",
-            data: task,
-            errors: []
+        if (isEligibleToCreateTask) {
+          const task = await prisma.projectTask.create({
+            data: {
+              name: req.body.name,
+              userId: userId,
+              description: req.body.description,
+              memberId: req.body.memberId,
+              projectId: projectId,
+              managedUserId: userId,
+              updatedAt: new Date().toISOString(),
+              status: "DRAFT",
+              startDate: req.body?.startDate,
+              startTime: req.body?.startTime,
+              endDate: req.body?.endDate,
+              endTime: req.body?.endTime
+            }
           });
+          if (task) {
+            res.json({
+              status: "success",
+              data: task,
+              errors: []
+            });
+          } else {
+            res.status(422);
+            res.send({ message: "Task not created" });
+          }
         } else {
           res.status(422);
-          res.send({ message: "Task not created" });
+          res.send({
+            message: `Project Member with role ${memberDetails.role} cannot create task`
+          });
         }
       }
     } else {
