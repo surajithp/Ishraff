@@ -15,7 +15,8 @@ import {
   updateProject,
   deleteProjectMember,
   changeProjectMemberRole,
-  updateProjectInvitation
+  updateProjectInvitation,
+  getProjectAttachments
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -34,6 +35,12 @@ import {
   getProjectUpdates,
   getTaskUpdates
 } from "./handlers/taskUpdate";
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage
+});
 
 const router = Router();
 
@@ -103,11 +110,16 @@ router.patch(
 );
 
 router.post(
-  "/project/:id/attachment/upload",
-  body("projectId").notEmpty().withMessage("Member Id should not be empty"),
-  body("memberId").notEmpty().withMessage("Member Id should not be empty"),
+  "/project/:id/attachments",
+  upload.single("file"),
   handleInputErrors,
   createProjectAttachment
+);
+
+router.get(
+  "/project/:id/attachments",
+  handleInputErrors,
+  getProjectAttachments
 );
 
 router.get("/project/:id/invitations", getProjectInvitations);

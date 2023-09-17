@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -65,15 +66,15 @@ model Project {
 }
 
 model ProjectAttachment {
-  id                 String        @id @default(uuid())
-  createdAt          DateTime      @default(now())
+  id                 String   @id @default(uuid())
+  createdAt          DateTime @default(now())
   projectId          String
-  project            Project       @relation(fields: [projectId], references: [id])
+  project            Project  @relation(fields: [projectId], references: [id])
   attachmentType     String
-  attachmentSize     BigInt
+  attachmentSize     Int
   attachementFileKey String
-  memberId           String
-  member             ProjectMember @relation(fields: [memberId], references: [id])
+  userId             String
+  addedBy            String
 }
 
 model ProjectInvitation {
@@ -98,7 +99,6 @@ model ProjectMember {
   projects                Project[]
   userId                  String
   user                    User                      @relation(fields: [userId], references: [id])
-  ProjectAttachment       ProjectAttachment[]
   UpdateComments          UpdateComments[]
   ProjectTask             ProjectTask[]
   ProjectMemberOnProjects ProjectMemberOnProjects[]

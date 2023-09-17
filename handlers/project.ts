@@ -198,7 +198,7 @@ export const updateProjectInvitation = async (req, res) => {
             const member = await prisma.projectMember.create({
               data: {
                 role: invitationDetails.role,
-                userId: req.body.userId,
+                userId: invitationDetails.inviteeId,
                 projectId: projectId
               }
             });
@@ -375,16 +375,41 @@ export const deleteProjectMember = async (req, res, next) => {
 
 export const getPlatformUsers = async (req, res, next) => {
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        email: true,
-        username: true,
-        phoneNumber: true,
-        id: true,
-        password: false
-      }
-    });
-    res.json({ status: "success", data: users, errors: [] });
+    let searchParam = req.query.searchText;
+    if (searchParam) {
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              email: {
+                contains: searchParam
+              }
+            },
+            { username: { contains: searchParam } },
+            { phoneNumber: { contains: searchParam } }
+          ]
+        },
+        select: {
+          email: true,
+          username: true,
+          phoneNumber: true,
+          id: true,
+          password: false
+        }
+      });
+      res.json({ status: "success", data: users, errors: [] });
+    } else {
+      const users = await prisma.user.findMany({
+        select: {
+          email: true,
+          username: true,
+          phoneNumber: true,
+          id: true,
+          password: false
+        }
+      });
+      res.json({ status: "success", data: users, errors: [] });
+    }
   } catch (error) {
     next(error);
   }
@@ -419,7 +444,7 @@ export const getProjectMembers = async (req, res) => {
   }
 };
 
-export const createProjectAttachment = async (req, res) => {
+export const createProjectAttachment = async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const projectDetails = await prisma.project.findFirst({
@@ -428,61 +453,53 @@ export const createProjectAttachment = async (req, res) => {
       }
     });
     if (projectDetails) {
-      const projectMember = await prisma.user.findFirst({
-        where: {
-          id: req.body.memberId
+      console.log("=req", req);
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype;
+      const objectKey = `${slugifyString(
+        Date.now().toString()
+      )}-${slugifyString(fileName)}`;
+      const S3 = new S3Client({
+        region: "auto",
+        endpoint: process.env.ENDPOINT,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
         }
       });
-      if (projectMember) {
-        const fileName = req.file.originalname;
-        const fileType = req.file.mimetype;
-        const objectKey = `${slugifyString(
-          Date.now().toString()
-        )}-${slugifyString(fileName)}`;
-        const S3 = new S3Client({
-          region: "auto",
-          endpoint: process.env.ENDPOINT,
-          credentials: {
-            accessKeyId: process.env.R2_ACCESS_KEY_ID,
-            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+      const response = await S3.send(
+        new PutObjectCommand({
+          Body: req.file.buffer,
+          Bucket: process.env.BUCKET_NAME,
+          Key: objectKey,
+          ContentType: fileType
+        })
+      );
+      if (response) {
+        const fileSize = parseInt(req.headers["content-length"]);
+        const attachment = await prisma.projectAttachment.create({
+          data: {
+            projectId: projectId,
+            userId: req.user.id,
+            addedBy: req.user?.email,
+            attachementFileKey: objectKey,
+            attachmentSize: fileSize,
+            attachmentType: fileType
           }
         });
-        const response = await S3.send(
-          new PutObjectCommand({
-            Body: req.file.buffer,
-            Bucket: process.env.BUCKET_NAME,
-            Key: objectKey,
-            ContentType: fileType
-          })
-        );
-        if (response) {
-          const fileSize = parseInt(req.headers["content-length"]);
-          const attachment = await prisma.projectAttachment.create({
-            data: {
-              projectId: projectId,
-              memberId: projectMember.id,
-              attachementFileKey: objectKey,
-              attachmentSize: fileSize,
-              attachmentType: fileType
-            }
-          });
-          res.json({
-            status: "success",
-            data: attachment,
-            errors: []
-          });
-        }
-      } else {
-        res.status(422);
-        res.send({ message: "Project Member does not exist" });
+        res.json({
+          status: "success",
+          data: attachment,
+          errors: []
+        });
       }
     } else {
       res.status(422);
       res.send({ message: "Project does not exist" });
     }
   } catch (error) {
-    res.status(422);
-    res.send({ message: error });
+    console.log("=error", error);
+    next(error);
   }
 };
 
