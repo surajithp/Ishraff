@@ -43,7 +43,7 @@ model PlatformInvitation {
 model Project {
   id                      String                    @id @default(uuid())
   createdAt               DateTime                  @default(now())
-  name                    String                    @unique
+  name                    String
   type                    ProjectType               @default(self)
   location                String?
   latitude                Float
@@ -63,6 +63,7 @@ model Project {
   TaskUpdate              TaskUpdate[]
   ProjectTask             ProjectTask[]
   ProjectMemberOnProjects ProjectMemberOnProjects[]
+  status                  PROJECT_STATUS            @default(IN_PROGRESS)
 }
 
 model ProjectAttachment {
@@ -78,17 +79,17 @@ model ProjectAttachment {
 }
 
 model ProjectInvitation {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  invitedBy User     @relation("Invited User", fields: [userId], references: [id])
+  id        String                    @id @default(uuid())
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @default(now())
+  invitedBy User                      @relation("Invited User", fields: [userId], references: [id])
   userId    String
   inviteeId String
-  invitee   User     @relation("Invitee User", fields: [inviteeId], references: [id])
-  role      Role     @default(manager)
+  invitee   User                      @relation("Invitee User", fields: [inviteeId], references: [id])
+  role      Role                      @default(manager)
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id])
-  status    String
+  project   Project                   @relation(fields: [projectId], references: [id])
+  status    PROJECT_INVITATION_STATUS @default(not_accepted)
 }
 
 model ProjectMember {
@@ -177,6 +178,19 @@ enum TASK_STATUS {
   COMPLETED
   ARCHIVED
   REOPENED
+}
+
+enum PROJECT_STATUS {
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+  OVERDUE
+}
+
+enum PROJECT_INVITATION_STATUS {
+  accepted
+  rejected
+  not_accepted
 }
 
 enum UPDATE_STATUS {

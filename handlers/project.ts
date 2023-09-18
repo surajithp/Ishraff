@@ -18,8 +18,23 @@ export const getProjects = async (req, res, next) => {
         projects: true
       }
     });
-    console.log("==user", user);
-    res.json({ status: "success", data: user.projects, errors: [] });
+    const projectMember = user.ProjectMember;
+    const projectIds = projectMember.map((item) => item.projectId);
+    let proms = [];
+    projectIds.forEach((projectId) => {
+      proms.push(
+        prisma.project.findFirst({
+          where: {
+            id: projectId
+          }
+        })
+      );
+    });
+    const assignedProjects = await Promise.all(proms);
+    console.log("====assignedProjects", assignedProjects);
+    const createdProjects = user.projects;
+    const userProjects = [...createdProjects, ...assignedProjects];
+    res.json({ status: "success", data: userProjects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
     next(error);
@@ -54,7 +69,28 @@ export const getProject = async (req, res) => {
         belongsToId: req.user.id
       }
     });
-    res.json({ status: "success", data: project, errors: [] });
+    if (project) {
+      const projectTasks = await prisma.projectTask.findMany({
+        where: {
+          projectId: project.id
+        }
+      });
+      const totalTasks = projectTasks;
+      const completedTasks = projectTasks.filter(
+        (task) => task.status === "COMPLETED"
+      );
+      const data = {
+        ...project,
+        tasksSummary: {
+          totalTasks: totalTasks.length,
+          completedTasks: completedTasks.length
+        }
+      };
+      res.json({ status: "success", data: data, errors: [] });
+    } else {
+      res.status(404);
+      res.send({ message: "Not found" });
+    }
   } catch (error) {
     res.status(404);
     res.send({ message: "Not found" });
@@ -63,6 +99,7 @@ export const getProject = async (req, res) => {
 
 export const createProject = async (req, res, next) => {
   try {
+    console.log("=req", req.user);
     const project = await prisma.project.create({
       data: {
         name: req.body.name,
@@ -122,7 +159,7 @@ export const createProjectInvitation = async (req, res) => {
       if (projectDetails.type === "team") {
         const inviteeUserDetails = await prisma.user.findFirst({
           where: {
-            id: req.body.memberId
+            id: req.body.userId
           }
         });
         if (!inviteeUserDetails) {
@@ -131,15 +168,15 @@ export const createProjectInvitation = async (req, res) => {
         } else {
           const inviteeDetails = await prisma.projectInvitation.findFirst({
             where: {
-              inviteeId: req.body.memberId
+              inviteeId: req.body.userId
             }
           });
           if (!inviteeDetails) {
             const projectInvitation = await prisma.projectInvitation.create({
               data: {
                 userId: req.user.id,
-                inviteeId: req.body.memberId,
-                status: "not-accepted",
+                inviteeId: req.body.userId,
+                status: "not_accepted",
                 role: req.body.role,
                 projectId: projectId
               }
@@ -212,6 +249,12 @@ export const updateProjectInvitation = async (req, res) => {
               res.status(422);
               res.send({ message: "Project invitation updation failed" });
             }
+          } else {
+            res.json({
+              status: "success",
+              data: projectInvitation,
+              errors: []
+            });
           }
         } else {
           res.status(422);
@@ -228,6 +271,25 @@ export const updateProjectInvitation = async (req, res) => {
   } catch (error) {
     res.status(422);
     res.send({ message: error });
+  }
+};
+
+export const getProjectInvitation = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const invitationId = req.params.invitationId;
+    const projectInvitation = await prisma.projectInvitation.findFirst({
+      where: {
+        id: invitationId,
+        projectId: projectId
+      },
+      include: {
+        invitee: true
+      }
+    });
+    res.json({ status: "success", data: projectInvitation, errors: [] });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -477,11 +539,16 @@ export const createProjectAttachment = async (req, res, next) => {
       );
       if (response) {
         const fileSize = parseInt(req.headers["content-length"]);
+        const user = await prisma.user.findUnique({
+          where: {
+            id: req.user.id
+          }
+        });
         const attachment = await prisma.projectAttachment.create({
           data: {
             projectId: projectId,
             userId: req.user.id,
-            addedBy: req.user?.email,
+            addedBy: user.username,
             attachementFileKey: objectKey,
             attachmentSize: fileSize,
             attachmentType: fileType

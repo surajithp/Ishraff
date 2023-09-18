@@ -10,6 +10,7 @@ import {
   getProjectMember,
   getPlatformUsers,
   createProjectInvitation,
+  getProjectInvitation,
   getProjectInvitations,
   createProjectAttachment,
   updateProject,
@@ -58,8 +59,14 @@ router.post(
   body("type").isString().withMessage("Type should not be empty"),
   body("latitude").isNumeric().withMessage("Latitude should be numeric"),
   body("latitude").notEmpty().withMessage("Latitude should not be empty"),
+  body("latitude")
+    .isFloat({ max: 90, min: -90 })
+    .withMessage("Latitude must be a number between -90 and 90"),
   body("longitude").isNumeric().withMessage("Longitude should be numeric"),
   body("longitude").notEmpty().withMessage("Longitude should not be empty"),
+  body("longitude")
+    .isFloat({ max: 180, min: -180 })
+    .withMessage("Longitude must be a number between -180 and 180"),
   handleInputErrors,
   createProject
 );
@@ -81,11 +88,17 @@ router.patch(
     .optional()
     .notEmpty()
     .withMessage("Latitude should not be empty"),
+  body("latitude")
+    .isFloat({ max: 90, min: -90 })
+    .withMessage("Latitude must be a number between -90 and 90"),
   body("longitude")
     .isNumeric()
     .optional()
     .notEmpty()
     .withMessage("Longitude should not be empty"),
+  body("longitude")
+    .isFloat({ max: 180, min: -180 })
+    .withMessage("Longitude must be a number between -180 and 180"),
   handleInputErrors,
   updateProject
 );
@@ -96,7 +109,7 @@ router.get("/projects", getProjects);
 
 router.post(
   "/project/:id/invitation",
-  body("memberId").notEmpty().withMessage("Member Id should not be empty"),
+  body("userId").notEmpty().withMessage("User Id should not be empty"),
   body("role").notEmpty().withMessage("Role should not be empty"),
   handleInputErrors,
   createProjectInvitation
@@ -107,6 +120,12 @@ router.patch(
   body("status").notEmpty().withMessage("status should not be empty"),
   handleInputErrors,
   updateProjectInvitation
+);
+
+router.get(
+  "/project/:id/invitation/:invitationId",
+  handleInputErrors,
+  getProjectInvitation
 );
 
 router.post(
@@ -124,7 +143,7 @@ router.get(
 
 router.get("/project/:id/invitations", getProjectInvitations);
 
-router.post("/project/:id/members", createProjectMember);
+// router.post("/project/:id/members", createProjectMember);
 
 router.patch(
   "/project/:id/members/:memberId/role",

@@ -12,7 +12,10 @@ export const hashPassword = (password) => {
 export const createJWT = (user) => {
   const token = jwt.sign(
     { id: user.id, email: user.email },
-    process.env.JWT_SECRET
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "10h"
+    }
   );
   return token;
 };
@@ -34,14 +37,20 @@ export const protect = (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("=====payload", payload);
-    req.user = payload;
-    console.log(payload);
-    next();
-    return;
+    jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
+      if (err) {
+        res.status(401);
+        res.send("Not authorized");
+      } else {
+        console.log("Token verifified successfully");
+        if (decoded) {
+          req.user = decoded;
+          console.log(decoded);
+          next();
+        }
+      }
+    });
   } catch (e) {
-    console.error(e);
     res.status(401);
     res.send("Not authorized");
     return;

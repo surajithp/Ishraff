@@ -16,7 +16,7 @@ export const createPlatformInvitation = async (req, res) => {
       data: {
         senderId: req.user.id,
         receiverId: req.body.receiverId,
-        status: "not-accepted"
+        status: "not_accepted"
       }
     });
     res.json({ status: "success", data: invitation, errors: [] });

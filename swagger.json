@@ -331,7 +331,7 @@
             "schema": {
               "type": "object",
               "properties": {
-                "memberId": {
+                "userId": {
                   "type": "string"
                 },
                 "role": {
@@ -342,6 +342,65 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectInvitationResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/invitation/{invitationId}": {
+      "patch": {
+        "summary": "Update Project Invitation",
+        "description": "Update Project Invitation",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Update invitation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["accepted,rejected"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectInvitationResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{id}/invitation/{invitationId}": {
+      "get": {
+        "summary": "Get Project Invitation",
+        "description": "Get Project Invitation",
+        "produces": ["application/json"],
         "responses": {
           "200": {
             "description": "successful operation",
@@ -372,50 +431,6 @@
               "items": {
                 "$ref": "#/definitions/projectInvitationResponse"
               }
-            }
-          },
-          "400": {
-            "description": "Invalid status value",
-            "schema": {
-              "$ref": "#/definitions/InvalidResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/project/{projectId}/members": {
-      "post": {
-        "summary": "Create Project Member",
-        "description": "Create Project Member",
-        "produces": ["application/json"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "description": "Project Member payload",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "projectId": {
-                  "type": "string"
-                },
-                "role": {
-                  "type": "string",
-                  "enum": ["manager,worker,guest"]
-                },
-                "userId": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/projectMemberResponse"
             }
           },
           "400": {
@@ -460,7 +475,7 @@
       }
     },
     "/api/project/{projectId}/members/{memberId}/role": {
-      "post": {
+      "patch": {
         "summary": "Update Project Member Role",
         "description": "Update Project Member Role",
         "produces": ["application/json"],
@@ -486,6 +501,27 @@
             "description": "successful operation",
             "schema": {
               "$ref": "#/definitions/projectMemberResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/attachments": {
+      "post": {
+        "summary": "Add Project Attachment",
+        "description": "Project Attachment",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectAttachmentResponse"
             }
           },
           "400": {
@@ -663,6 +699,49 @@
             "role": {
               "type": "string",
               "enum": ["manager", "worker", "guest"]
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "projectAttachmentResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "userId": {
+              "type": "string"
+            },
+            "projectId": {
+              "type": "string"
+            },
+            "addedBy": {
+              "type": "string"
+            },
+            "attachementFileKey": {
+              "type": "string"
+            },
+            "attachmentSize": {
+              "type": "number"
+            },
+            "attachmentType": {
+              "type": "string"
             },
             "createdAt": {
               "type": "string"
