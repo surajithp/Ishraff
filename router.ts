@@ -17,6 +17,7 @@ import {
   deleteProjectMember,
   changeProjectMemberRole,
   updateProjectInvitation,
+  removeProjectInvitation,
   getProjectAttachments
 } from "./handlers/project";
 import {
@@ -117,7 +118,11 @@ router.post(
 
 router.patch(
   "/project/:id/invitation/:invitationId",
-  body("status").notEmpty().withMessage("status should not be empty"),
+  body("status")
+    .optional()
+    .notEmpty()
+    .withMessage("status should not be empty"),
+  body("role").optional().notEmpty().withMessage("role should not be empty"),
   handleInputErrors,
   updateProjectInvitation
 );
@@ -126,6 +131,12 @@ router.get(
   "/project/:id/invitation/:invitationId",
   handleInputErrors,
   getProjectInvitation
+);
+
+router.delete(
+  "/project/:id/invitation/:invitationId",
+  handleInputErrors,
+  removeProjectInvitation
 );
 
 router.post(

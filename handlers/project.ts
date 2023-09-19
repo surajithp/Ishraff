@@ -164,11 +164,12 @@ export const createProjectInvitation = async (req, res) => {
         });
         if (!inviteeUserDetails) {
           res.status(422);
-          res.send({ message: "Member does not exist" });
+          res.send({ message: "User does not exist" });
         } else {
           const inviteeDetails = await prisma.projectInvitation.findFirst({
             where: {
-              inviteeId: req.body.userId
+              inviteeId: req.body.userId,
+              projectId: projectId
             }
           });
           if (!inviteeDetails) {
@@ -219,7 +220,8 @@ export const updateProjectInvitation = async (req, res) => {
       if (projectDetails.type === "team") {
         const invitationDetails = await prisma.projectInvitation.findFirst({
           where: {
-            id: invitationId
+            id: invitationId,
+            projectId: projectId
           }
         });
         if (invitationDetails) {
@@ -228,7 +230,7 @@ export const updateProjectInvitation = async (req, res) => {
               id: invitationId
             },
             data: {
-              status: req.body.status
+              ...req.body
             }
           });
           if (status === "accepted") {
@@ -293,14 +295,52 @@ export const getProjectInvitation = async (req, res, next) => {
   }
 };
 
+export const removeProjectInvitation = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const invitationId = req.params.invitationId;
+    const invitationDetails = await prisma.projectInvitation.findUnique({
+      where: {
+        id: invitationId
+      }
+    });
+    if (invitationDetails) {
+      if (invitationDetails.status !== "accepted") {
+        const projectInvitation = await prisma.projectInvitation.delete({
+          where: {
+            id: invitationId,
+            projectId: projectId
+          }
+        });
+        res.json({ status: "success", data: projectInvitation, errors: [] });
+      } else {
+        res.status(422);
+        res.send({ message: "Cannot delete accepted project invitation" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project invitation does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getProjectInvitations = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const projectInvitation = await prisma.projectInvitation.findMany({
-      where: {
+    const role = req.query.role;
+    let whereParams: any = {
+      projectId: projectId
+    };
+    if (role) {
+      whereParams = {
         projectId: projectId,
-        userId: req.user.id
-      },
+        role: role
+      };
+    }
+    const projectInvitation = await prisma.projectInvitation.findMany({
+      where: whereParams,
       include: {
         invitee: true
       }
@@ -438,8 +478,18 @@ export const deleteProjectMember = async (req, res, next) => {
 export const getPlatformUsers = async (req, res, next) => {
   try {
     let searchParam = req.query.searchText;
+    const projectId = req.query.projectId;
+    let projectMembers = [];
+    let users = [];
+    if (projectId) {
+      projectMembers = await prisma.projectMember.findMany({
+        where: {
+          projectId: projectId
+        }
+      });
+    }
     if (searchParam) {
-      const users = await prisma.user.findMany({
+      users = await prisma.user.findMany({
         where: {
           OR: [
             {
@@ -459,9 +509,8 @@ export const getPlatformUsers = async (req, res, next) => {
           password: false
         }
       });
-      res.json({ status: "success", data: users, errors: [] });
     } else {
-      const users = await prisma.user.findMany({
+      users = await prisma.user.findMany({
         select: {
           email: true,
           username: true,
@@ -470,9 +519,18 @@ export const getPlatformUsers = async (req, res, next) => {
           password: false
         }
       });
-      res.json({ status: "success", data: users, errors: [] });
     }
+    if (projectMembers.length > 0) {
+      users = users.filter((user) => {
+        const isExisted = projectMembers.find(
+          (member) => member.userId === user.id
+        );
+        return isExisted ? false : true;
+      });
+    }
+    res.json({ status: "success", data: users, errors: [] });
   } catch (error) {
+    console.log("=error", error);
     next(error);
   }
 };

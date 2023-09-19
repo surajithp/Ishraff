@@ -50,8 +50,8 @@ model Project {
   longitude               Float
   startDate               DateTime?
   endDate                 DateTime?
-  startTime               DateTime?
-  endTime                 DateTime?
+  startTime               String?
+  endTime                 String?
   client                  String?
   description             String?
   belongsToId             String
@@ -134,8 +134,8 @@ model ProjectTask {
   isArchived    Boolean       @default(false)
   startDate     DateTime?
   endDate       DateTime?
-  startTime     DateTime?
-  endTime       DateTime?
+  startTime     String?
+  endTime       String?
   TaskUpdate    TaskUpdate[]
 }
 
