@@ -30,11 +30,8 @@ export const getProjects = async (req, res, next) => {
         })
       );
     });
-    const assignedProjects = await Promise.all(proms);
-    console.log("====assignedProjects", assignedProjects);
-    const createdProjects = user.projects;
-    const userProjects = [...createdProjects, ...assignedProjects];
-    res.json({ status: "success", data: userProjects, errors: [] });
+    const projects = await Promise.all(proms);
+    res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
     next(error);
@@ -109,7 +106,21 @@ export const createProject = async (req, res, next) => {
         belongsToId: req.user.id
       }
     });
-    res.json({ status: "success", data: project, errors: [] });
+    if (project) {
+      const member = await prisma.projectMember.create({
+        data: {
+          role: "admin",
+          userId: req.user.id,
+          projectId: project.id
+        }
+      });
+      if (member) {
+        res.json({ status: "success", data: project, errors: [] });
+      }
+    } else {
+      res.status(404);
+      res.send({ message: "Project Creation Failed" });
+    }
   } catch (error) {
     next(error);
   }
@@ -125,15 +136,27 @@ export const updateProject = async (req, res, next) => {
     });
     if (projectDetails) {
       if (!req.body.type) {
-        const project = await prisma.project.update({
+        const projectMember = await prisma.projectMember.findFirst({
           where: {
-            id: projectId
-          },
-          data: {
-            ...req.body
+            userId: req.user.id
           }
         });
-        res.json({ status: "success", data: project, errors: [] });
+        if (projectMember && projectMember.role === "admin") {
+          const project = await prisma.project.update({
+            where: {
+              id: projectId
+            },
+            data: {
+              ...req.body
+            }
+          });
+          res.json({ status: "success", data: project, errors: [] });
+        } else {
+          res.status(422);
+          res.send({
+            message: "Only Project Admin can update project details"
+          });
+        }
       } else {
         res.status(422);
         res.send({ message: "Project type cannot be changed" });
@@ -149,6 +172,7 @@ export const updateProject = async (req, res, next) => {
 
 export const createProjectInvitation = async (req, res) => {
   try {
+    const invitationRole = req.body.role;
     const projectId = req.params.id;
     const projectDetails = await prisma.project.findFirst({
       where: {
@@ -157,39 +181,64 @@ export const createProjectInvitation = async (req, res) => {
     });
     if (projectDetails) {
       if (projectDetails.type === "team") {
-        const inviteeUserDetails = await prisma.user.findFirst({
+        const projectMember = await prisma.projectMember.findFirst({
           where: {
-            id: req.body.userId
+            userId: req.user.id
           }
         });
-        if (!inviteeUserDetails) {
-          res.status(422);
-          res.send({ message: "User does not exist" });
-        } else {
-          const inviteeDetails = await prisma.projectInvitation.findFirst({
+        if (projectMember) {
+          const inviteeUserDetails = await prisma.user.findFirst({
             where: {
-              inviteeId: req.body.userId,
-              projectId: projectId
+              id: req.body.userId
             }
           });
-          if (!inviteeDetails) {
-            const projectInvitation = await prisma.projectInvitation.create({
-              data: {
-                userId: req.user.id,
+          if (!inviteeUserDetails) {
+            res.status(422);
+            res.send({ message: "User does not exist" });
+          } else {
+            const inviteeDetails = await prisma.projectInvitation.findFirst({
+              where: {
                 inviteeId: req.body.userId,
-                status: "not_accepted",
-                role: req.body.role,
                 projectId: projectId
               }
             });
-            res.json({
-              status: "success",
-              data: projectInvitation,
-              errors: []
-            });
-          } else {
-            res.status(422);
-            res.send({ message: "Project invitation already existed" });
+            if (!inviteeDetails) {
+              let projectInvitation = null;
+              if (invitationRole === "manager") {
+                if (projectMember.role === "admin") {
+                  projectInvitation = await prisma.projectInvitation.create({
+                    data: {
+                      userId: req.user.id,
+                      inviteeId: req.body.userId,
+                      status: "not_accepted",
+                      role: req.body.role,
+                      projectId: projectId
+                    }
+                  });
+                } else {
+                  res.status(422);
+                  res.send({ message: "Admin only can invite Manager" });
+                }
+              } else {
+                projectInvitation = await prisma.projectInvitation.create({
+                  data: {
+                    userId: req.user.id,
+                    inviteeId: req.body.userId,
+                    status: "not_accepted",
+                    role: req.body.role,
+                    projectId: projectId
+                  }
+                });
+              }
+              res.json({
+                status: "success",
+                data: projectInvitation,
+                errors: []
+              });
+            } else {
+              res.status(422);
+              res.send({ message: "Project invitation already existed" });
+            }
           }
         }
       } else {
@@ -452,6 +501,23 @@ export const deleteProjectMember = async (req, res, next) => {
       }
     });
     if (projectMember) {
+      const tasks = await prisma.projectTask.findMany({
+        where: {
+          memberId: memberId
+        }
+      });
+      console.log("=tasks", tasks);
+      let proms = [];
+      tasks.forEach((task) =>
+        proms.push(
+          prisma.projectTask.delete({
+            where: {
+              id: task.id
+            }
+          })
+        )
+      );
+      await Promise.all(proms);
       const member = await prisma.projectMember.delete({
         where: {
           id: memberId
@@ -482,7 +548,7 @@ export const getPlatformUsers = async (req, res, next) => {
     let projectMembers = [];
     let users = [];
     if (projectId) {
-      projectMembers = await prisma.projectMember.findMany({
+      projectMembers = await prisma.projectInvitation.findMany({
         where: {
           projectId: projectId
         }
@@ -523,7 +589,7 @@ export const getPlatformUsers = async (req, res, next) => {
     if (projectMembers.length > 0) {
       users = users.filter((user) => {
         const isExisted = projectMembers.find(
-          (member) => member.userId === user.id
+          (member) => member.inviteeId === user.id || member.userId === user.id
         );
         return isExisted ? false : true;
       });
@@ -573,50 +639,67 @@ export const createProjectAttachment = async (req, res, next) => {
       }
     });
     if (projectDetails) {
-      console.log("=req", req);
-      const fileName = req.file.originalname;
-      const fileType = req.file.mimetype;
-      const objectKey = `${slugifyString(
-        Date.now().toString()
-      )}-${slugifyString(fileName)}`;
-      const S3 = new S3Client({
-        region: "auto",
-        endpoint: process.env.ENDPOINT,
-        credentials: {
-          accessKeyId: process.env.R2_ACCESS_KEY_ID,
-          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          userId: req.user.id
         }
       });
-      const response = await S3.send(
-        new PutObjectCommand({
-          Body: req.file.buffer,
-          Bucket: process.env.BUCKET_NAME,
-          Key: objectKey,
-          ContentType: fileType
-        })
-      );
-      if (response) {
-        const fileSize = parseInt(req.headers["content-length"]);
-        const user = await prisma.user.findUnique({
-          where: {
-            id: req.user.id
+      if (projectMember) {
+        let isEligibleToCreateTask =
+          projectMember.role === "manager" || projectMember.role === "admin";
+        if (isEligibleToCreateTask) {
+          const fileName = req.file.originalname;
+          const fileType = req.file.mimetype;
+          const objectKey = `${slugifyString(
+            Date.now().toString()
+          )}-${slugifyString(fileName)}`;
+          const S3 = new S3Client({
+            region: "auto",
+            endpoint: process.env.ENDPOINT,
+            credentials: {
+              accessKeyId: process.env.R2_ACCESS_KEY_ID,
+              secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+            }
+          });
+          const response = await S3.send(
+            new PutObjectCommand({
+              Body: req.file.buffer,
+              Bucket: process.env.BUCKET_NAME,
+              Key: objectKey,
+              ContentType: fileType
+            })
+          );
+          if (response) {
+            const fileSize = parseInt(req.headers["content-length"]);
+            const user = await prisma.user.findUnique({
+              where: {
+                id: req.user.id
+              }
+            });
+            const attachment = await prisma.projectAttachment.create({
+              data: {
+                projectId: projectId,
+                userId: req.user.id,
+                addedBy: user.username,
+                attachementFileKey: objectKey,
+                attachmentName: fileName,
+                attachmentSize: fileSize,
+                attachmentType: fileType
+              }
+            });
+            res.json({
+              status: "success",
+              data: attachment,
+              errors: []
+            });
           }
-        });
-        const attachment = await prisma.projectAttachment.create({
-          data: {
-            projectId: projectId,
-            userId: req.user.id,
-            addedBy: user.username,
-            attachementFileKey: objectKey,
-            attachmentSize: fileSize,
-            attachmentType: fileType
-          }
-        });
-        res.json({
-          status: "success",
-          data: attachment,
-          errors: []
-        });
+        } else {
+          res.status(422);
+          res.send({ message: "Permission denied to Add Attachement" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "ProjectMember does not exist" });
       }
     } else {
       res.status(422);

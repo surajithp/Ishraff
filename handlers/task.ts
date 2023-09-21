@@ -11,42 +11,80 @@ export const createProjectTask = async (req, res, next) => {
     if (projectDetails) {
       const memberDetails = await prisma.projectMember.findFirst({
         where: {
-          id: req.body.memberId
+          projectId: projectId,
+          userId: req.user.id
+        },
+        include: {
+          user: true
         }
       });
       if (memberDetails) {
         let isEligibleToCreateTask =
           memberDetails.role === "manager" || memberDetails.role === "admin";
-        let userId = req.body.userId;
-        if (!userId) {
-          userId = req.user.id;
-        }
         if (isEligibleToCreateTask) {
-          const task = await prisma.projectTask.create({
-            data: {
-              name: req.body.name,
-              userId: userId,
-              description: req.body.description,
-              memberId: req.body.memberId,
-              projectId: projectId,
-              managedUserId: userId,
-              updatedAt: new Date().toISOString(),
-              status: "DRAFT",
-              startDate: req.body?.startDate,
-              startTime: req.body?.startTime,
-              endDate: req.body?.endDate,
-              endTime: req.body?.endTime
+          const managedMemberId = req.body.managedMemberId;
+          let managedUser = null;
+          if (managedMemberId === "self") {
+            managedUser = memberDetails;
+          } else {
+            const projectMemberDetails = await prisma.projectMember.findFirst({
+              where: {
+                id: managedMemberId,
+                projectId: projectId
+              },
+              include: {
+                user: true
+              }
+            });
+            if (projectMemberDetails) {
+              managedUser = projectMemberDetails;
+            } else {
+              res.status(422);
+              res.send({
+                message: `Managed User is not Project Member`
+              });
+            }
+          }
+          console.log("===managedUser", managedUser);
+          const assignedMember = await prisma.projectMember.findFirst({
+            where: {
+              id: req.body.memberId,
+              projectId: projectId
             }
           });
-          if (task) {
-            res.json({
-              status: "success",
-              data: task,
-              errors: []
+          if (assignedMember) {
+            const task = await prisma.projectTask.create({
+              data: {
+                name: req.body.name,
+                userId: req.user.id,
+                description: req.body.description,
+                memberId: req.body.memberId,
+                projectId: projectId,
+                managedUserId: managedUser.user.id,
+                managedUserName: managedUser.user.username,
+                updatedAt: new Date().toISOString(),
+                status: "DRAFT",
+                startDate: req.body?.startDate,
+                startTime: req.body?.startTime,
+                endDate: req.body?.endDate,
+                endTime: req.body?.endTime
+              }
             });
+            if (task) {
+              res.json({
+                status: "success",
+                data: task,
+                errors: []
+              });
+            } else {
+              res.status(422);
+              res.send({ message: "Task not created" });
+            }
           } else {
             res.status(422);
-            res.send({ message: "Task not created" });
+            res.send({
+              message: `Assigned User is not Project Member`
+            });
           }
         } else {
           res.status(422);
@@ -54,6 +92,9 @@ export const createProjectTask = async (req, res, next) => {
             message: `Project Member with role ${memberDetails.role} cannot create task`
           });
         }
+      } else {
+        res.status(422);
+        res.send({ message: "Project member does not exist" });
       }
     } else {
       res.status(422);
@@ -180,10 +221,22 @@ export const getProjectTasks = async (req, res, next) => {
           createdBy: true
         }
       });
-      if (projectTasks) {
+      const tasks = projectTasks.map((task) => {
+        return {
+          created_at: task.createdAt,
+          created_by: task.createdBy.username,
+          assigned_at: task.createdAt,
+          assigned_to: task.assignedTo.user.username,
+          managed_by: task.managedUserId,
+          status: task.status,
+          name: task.name,
+          due_by: task.endDate
+        };
+      });
+      if (tasks) {
         res.json({
           status: "success",
-          data: projectTasks,
+          data: tasks,
           errors: []
         });
       } else {

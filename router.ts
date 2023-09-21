@@ -168,7 +168,17 @@ router.delete("/project/:id/members/:memberId", deleteProjectMember);
 
 router.get("/project/:id/members", getProjectMembers);
 
-router.post("/project/:id/tasks", createProjectTask);
+router.post(
+  "/project/:id/tasks",
+  body("name").notEmpty().withMessage("Name should not be empty"),
+  body("memberId")
+    .notEmpty()
+    .withMessage("Assigned Member Id should not be empty"),
+  body("managedMemberId")
+    .notEmpty()
+    .withMessage("Managed Member Id should not be empty"),
+  createProjectTask
+);
 
 router.patch("/project/:id/tasks/:taskId", updateProjectTask);
 

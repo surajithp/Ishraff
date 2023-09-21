@@ -74,6 +74,7 @@ model ProjectAttachment {
   attachmentType     String
   attachmentSize     Int
   attachementFileKey String
+  attachmentName     String   @default("FileName")
   userId             String
   addedBy            String
 }
@@ -126,6 +127,7 @@ model ProjectTask {
   belongsTo     Project       @relation(fields: [projectId], references: [id])
   createdBy     User          @relation(fields: [userId], references: [id])
   managedUserId String
+  managedUserName String      @default("")
   userId        String
   status        TASK_STATUS
   projectId     String
@@ -154,6 +156,7 @@ model TaskUpdate {
   attachmentType     String?
   attachmentSize     BigInt?
   attachementFileKey String?
+  attachementName    String?
   rating             Float?
   isFlagged          Boolean          @default(false)
   latitude           Float?
