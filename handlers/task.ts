@@ -39,26 +39,35 @@ export const createProjectTask = async (req, res, next) => {
             if (projectMemberDetails) {
               managedUser = projectMemberDetails;
             } else {
-              res.status(422);
-              res.send({
-                message: `Managed User is not Project Member`
-              });
+              throw new Error("Managed User is not Project Member");
             }
           }
-          console.log("===managedUser", managedUser);
-          const assignedMember = await prisma.projectMember.findFirst({
-            where: {
-              id: req.body.memberId,
-              projectId: projectId
-            }
-          });
+          if (managedUser.role !== "admin" && managedUser.role !== "manager") {
+            throw new Error("Managed User should be Admin or Manager");
+          }
+          let assignedMember = null;
+          if (req.body.memberId === "self") {
+            assignedMember = await prisma.projectMember.findFirst({
+              where: {
+                userId: req.user.id,
+                projectId: projectId
+              }
+            });
+          } else {
+            assignedMember = await prisma.projectMember.findFirst({
+              where: {
+                id: req.body.memberId,
+                projectId: projectId
+              }
+            });
+          }
           if (assignedMember) {
             const task = await prisma.projectTask.create({
               data: {
                 name: req.body.name,
                 userId: req.user.id,
                 description: req.body.description,
-                memberId: req.body.memberId,
+                memberId: assignedMember.id,
                 projectId: projectId,
                 managedUserId: managedUser.user.id,
                 managedUserName: managedUser.user.username,
@@ -81,10 +90,7 @@ export const createProjectTask = async (req, res, next) => {
               res.send({ message: "Task not created" });
             }
           } else {
-            res.status(422);
-            res.send({
-              message: `Assigned User is not Project Member`
-            });
+            throw new Error("Assigned User is not Project Member");
           }
         } else {
           res.status(422);
@@ -161,34 +167,60 @@ export const updateProjectTask = async (req, res, next) => {
           id: taskId
         }
       });
-      const memberDetails = await prisma.projectMember.findFirst({
-        where: {
-          id: req.body.memberId
-        }
-      });
-      if (memberDetails && taskDetails) {
-        let userId = req.body.userId;
-        if (!userId) {
-          userId = req.user.id;
-        }
-        const task = await prisma.projectTask.update({
+      if (taskDetails) {
+        const memberDetails = await prisma.projectMember.findFirst({
           where: {
-            id: taskId
-          },
-          data: {
-            ...req.body
+            projectId: projectId,
+            userId: req.user.id
           }
         });
-        if (task) {
-          res.json({
-            status: "success",
-            data: task,
-            errors: []
-          });
-        } else {
-          res.status(422);
-          res.send({ message: "Task not created" });
+        if (!memberDetails) {
+          throw new Error("Project Member does not exist");
         }
+        if (
+          memberDetails.role === "admin" ||
+          req.user.id === taskDetails.managedUserId
+        ) {
+          const status = req.body.status;
+          const data = {
+            ...req.body
+          };
+          if (status === "COMPLETED") {
+            data.isCompleted = true;
+          }
+          if (status === "ARCHIVED") {
+            data.isArchived = true;
+          }
+          if (status === "REOPENED") {
+            if (taskDetails.status === "COMPLETED") {
+              data.isReopened = true;
+            } else {
+              throw new Error("Cannot reopen a task which is not completed");
+            }
+          }
+          const task = await prisma.projectTask.update({
+            where: {
+              id: taskId
+            },
+            data: data
+          });
+          if (task) {
+            res.json({
+              status: "success",
+              data: task,
+              errors: []
+            });
+          } else {
+            res.status(422);
+            res.send({ message: "Task not updated" });
+          }
+        } else {
+          throw new Error(
+            "Project Admin or Task Manager can  edit task details"
+          );
+        }
+      } else {
+        throw new Error("Task  does not exist");
       }
     } else {
       res.status(422);

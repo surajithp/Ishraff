@@ -18,7 +18,8 @@ import {
   changeProjectMemberRole,
   updateProjectInvitation,
   removeProjectInvitation,
-  getProjectAttachments
+  getProjectAttachments,
+  deleteProjectAttachment
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -144,6 +145,12 @@ router.post(
   upload.single("file"),
   handleInputErrors,
   createProjectAttachment
+);
+
+router.post(
+  "/project/:id/attachments/:attachmentId",
+  handleInputErrors,
+  deleteProjectAttachment
 );
 
 router.get(

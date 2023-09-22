@@ -73,6 +73,7 @@ app.post(
 );
 
 app.use((err, req, res, next) => {
+  console.log("==err", err);
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case "P2002":
@@ -113,8 +114,12 @@ app.use((err, req, res, next) => {
       });
     }
   } else if (err instanceof Prisma.PrismaClientValidationError) {
-    console.log("=err", err);
     res.status(422);
+    res.send({
+      message: err.message
+    });
+  } else if (err) {
+    res.status(400);
     res.send({
       message: err.message
     });

@@ -463,12 +463,25 @@ export const getProjectMember = async (req, res, next) => {
 export const changeProjectMemberRole = async (req, res, next) => {
   try {
     const memberId = req.params.memberId;
+    const projectId = req.params.id;
     const projectMember = await prisma.projectMember.findFirst({
       where: {
         id: memberId
       }
     });
     if (projectMember) {
+      const user = await prisma.projectMember.findFirst({
+        where: {
+          userId: req.user.id,
+          projectId: projectId
+        }
+      });
+      if (!user) {
+        throw new Error("Project Admin does not exist");
+      }
+      if (user.role !== "admin") {
+        throw new Error("Project Admin can only change role");
+      }
       if (projectMember.role !== req.body.role) {
         const projectMember = await prisma.projectMember.update({
           where: {
@@ -645,9 +658,9 @@ export const createProjectAttachment = async (req, res, next) => {
         }
       });
       if (projectMember) {
-        let isEligibleToCreateTask =
+        let isEligibleToCreateProjectAttachment =
           projectMember.role === "manager" || projectMember.role === "admin";
-        if (isEligibleToCreateTask) {
+        if (isEligibleToCreateProjectAttachment) {
           const fileName = req.file.originalname;
           const fileType = req.file.mimetype;
           const objectKey = `${slugifyString(
@@ -681,7 +694,7 @@ export const createProjectAttachment = async (req, res, next) => {
                 projectId: projectId,
                 userId: req.user.id,
                 addedBy: user.username,
-                attachementFileKey: objectKey,
+                attachmentFileKey: objectKey,
                 attachmentName: fileName,
                 attachmentSize: fileSize,
                 attachmentType: fileType
@@ -720,12 +733,16 @@ export const deleteProjectAttachment = async (req, res) => {
       }
     });
     if (projectDetails) {
-      const projectMember = await prisma.user.findFirst({
+      const projectMember = await prisma.projectMember.findFirst({
         where: {
-          id: req.body.memberId
+          userId: req.user.id,
+          projectId: projectId
         }
       });
-      if (projectMember) {
+      if (
+        (projectMember && projectMember.role === "admin") ||
+        projectMember.role === "manager"
+      ) {
         const attachmentId = req.params.attachmentId;
         const attachment = await prisma.projectAttachment.findFirst({
           where: {
@@ -747,6 +764,9 @@ export const deleteProjectAttachment = async (req, res) => {
               errors: []
             });
           }
+        } else {
+          res.status(422);
+          res.send({ message: "Project Attachment does not exist" });
         }
       } else {
         res.status(422);
@@ -765,12 +785,13 @@ export const deleteProjectAttachment = async (req, res) => {
 export const getProjectAttachments = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const projectDetails = await prisma.project.findFirst({
+    const projectMember = await prisma.projectMember.findFirst({
       where: {
-        id: projectId
+        projectId: projectId,
+        userId: req.user.id
       }
     });
-    if (projectDetails) {
+    if (projectMember) {
       const attachments = await prisma.projectAttachment.findMany({
         where: {
           projectId: projectId
@@ -785,7 +806,7 @@ export const getProjectAttachments = async (req, res) => {
       }
     } else {
       res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.send({ message: "ProjectMember does not exist" });
     }
   } catch (error) {
     res.status(422);

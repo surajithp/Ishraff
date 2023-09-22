@@ -40,29 +40,32 @@ export const createTaskUpdate = async (req, res, next) => {
               ContentType: fileType
             })
           );
-          const fileSize = parseInt(req.headers["content-length"]);
-        }
-        const attachment = await prisma.taskUpdate.create({
-          data: {
-            projectId: projectId,
-            taskId: taskId,
-            description: req.body.description,
-            longitude: req.body.longitude,
-            latitude: req.body.latitude,
-            rating: null,
-            userId: req.user.id,
-            status: "IN_PROGRESS",
-            submittedOn: null,
-            attachementFileKey: null,
-            attachmentSize: null,
-            attachmentType: null
+          if (response) {
+            const fileSize = parseInt(req.headers["content-length"]);
+            const attachment = await prisma.taskUpdate.create({
+              data: {
+                projectId: projectId,
+                taskId: taskId,
+                description: req.body.description,
+                longitude: req.body.longitude,
+                latitude: req.body.latitude,
+                rating: null,
+                userId: req.user.id,
+                status: "IN_PROGRESS",
+                submittedOn: null,
+                attachementName: fileName,
+                attachmentFileKey: objectKey,
+                attachmentSize: fileSize,
+                attachmentType: fileType
+              }
+            });
+            res.json({
+              status: "success",
+              data: attachment,
+              errors: []
+            });
           }
-        });
-        res.json({
-          status: "success",
-          data: attachment,
-          errors: []
-        });
+        }
       } else {
         res.status(422);
         res.send({ message: "Task details does not exist" });
