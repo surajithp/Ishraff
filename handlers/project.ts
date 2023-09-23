@@ -15,11 +15,16 @@ export const getProjects = async (req, res, next) => {
       },
       include: {
         ProjectMember: true,
+        receivedProjectInvitations: true,
         projects: true
       }
     });
-    const projectMember = user.ProjectMember;
-    const projectIds = projectMember.map((item) => item.projectId);
+    let projectIds = [];
+    user.ProjectMember.map((item) => projectIds.push(item.projectId));
+    user.receivedProjectInvitations.map((item) =>
+      projectIds.push(item.projectId)
+    );
+    console.log("=====projectIds", projectIds);
     let proms = [];
     projectIds.forEach((projectId) => {
       proms.push(
@@ -388,13 +393,38 @@ export const getProjectInvitations = async (req, res) => {
         role: role
       };
     }
-    const projectInvitation = await prisma.projectInvitation.findMany({
-      where: whereParams,
-      include: {
-        invitee: true
+    const isProjectMember = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id
       }
     });
-    res.json({ status: "success", data: projectInvitation, errors: [] });
+    if (isProjectMember) {
+      whereParams.userId = req.user.id;
+    } else {
+      whereParams.inviteeId = req.user.id;
+    }
+    const projectInvitations = await prisma.projectInvitation.findMany({
+      where: whereParams,
+      include: {
+        invitee: true,
+        invitedBy: true,
+        project: true
+      }
+    });
+    const invitations = projectInvitations.map((invitation) => {
+      return {
+        id: invitation.id,
+        invited_on: invitation.createdAt,
+        updatedAt: invitation.updatedAt,
+        role: invitation.role,
+        projectId: invitation.projectId,
+        project: invitation.project.name,
+        status: invitation.status,
+        invited_by: invitation.invitedBy.username,
+        invitation_to: invitation.invitee.username
+      };
+    });
+    res.json({ status: "success", data: invitations, errors: [] });
   } catch (error) {}
 };
 
@@ -598,6 +628,7 @@ export const getPlatformUsers = async (req, res, next) => {
         }
       });
     }
+    console.log("==users", users);
     if (projectMembers.length > 0) {
       users = users.filter((user) => {
         const isExisted = projectMembers.find(
