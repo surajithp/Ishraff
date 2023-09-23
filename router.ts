@@ -29,7 +29,8 @@ import {
 import {
   generateInvitationCode,
   createPlatformInvitation,
-  getUserPlatformInvitations
+  getUserPlatformInvitations,
+  getUserProjectInvitations
 } from "./handlers/invitation";
 import {
   createTaskUpdate,

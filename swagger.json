@@ -161,6 +161,28 @@
         }
       }
     },
+    "/api/project/invitations?status=accepted,not_accepted&invitation_type=sent,received": {
+      "get": {
+        "summary": "Get User Invitations across all projects",
+        "description": "Get User Invitations across all projects",
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectInvitationResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/project": {
       "post": {
         "summary": "Create Project",

@@ -385,7 +385,6 @@ export const getProjectInvitations = async (req, res) => {
     const projectId = req.params.id;
     const role = req.query.role;
     const status = req.query.status;
-    const invitationType = req.query.invitation_type;
     let whereParams: any = {
       projectId: projectId
     };

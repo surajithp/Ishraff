@@ -28,6 +28,8 @@ export const createPlatformInvitation = async (req, res) => {
 
 export const getUserProjectInvitations = async (req, res, next) => {
   try {
+    const status = req.query.status;
+    const invitationType = req.query.invitation_type;
     const receivedInvitations = await prisma.projectInvitation.findMany({
       where: {
         inviteeId: req.user.id
@@ -54,7 +56,15 @@ export const getUserProjectInvitations = async (req, res, next) => {
     sentInvitations.forEach((invitation: any) => {
       invitation.invitationType = "sent";
     });
-    const invitations = [...receivedInvitations, ...sentInvitations];
+    let invitations = [...receivedInvitations, ...sentInvitations];
+    if (status) {
+      invitations = invitations.filter((item) => item.status === status);
+    }
+    if (invitationType) {
+      invitations = invitations.filter(
+        (item: any) => item.invitationType === invitationType
+      );
+    }
     res.json({ status: "success", data: invitations, errors: [] });
   } catch (error) {
     next(error);
