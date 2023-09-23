@@ -24,7 +24,7 @@ export const getProjects = async (req, res, next) => {
     user.receivedProjectInvitations.map((item) =>
       projectIds.push(item.projectId)
     );
-    console.log("=====projectIds", projectIds);
+    user.projects.map((item) => projectIds.push(item.id));
     let proms = [];
     projectIds.forEach((projectId) => {
       proms.push(
