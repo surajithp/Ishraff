@@ -53,7 +53,7 @@ export const createTaskUpdate = async (req, res, next) => {
                 userId: req.user.id,
                 status: "IN_PROGRESS",
                 submittedOn: null,
-                attachementName: fileName,
+                attachmentName: fileName,
                 attachmentFileKey: objectKey,
                 attachmentSize: fileSize,
                 attachmentType: fileType
