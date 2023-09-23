@@ -55,6 +55,8 @@ router.post("/platform/invitation", createPlatformInvitation);
 
 router.get("/platform/invitations", getUserPlatformInvitations);
 
+router.get("/project/invitations", getUserProjectInvitations);
+
 router.post(
   "/project",
   body("name").isString().notEmpty().withMessage("Name should not be empty"),

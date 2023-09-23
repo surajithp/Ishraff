@@ -21,10 +21,10 @@ export const getProjects = async (req, res, next) => {
     });
     let projectIds = [];
     user.ProjectMember.map((item) => projectIds.push(item.projectId));
-    user.receivedProjectInvitations.map((item) =>
-      projectIds.push(item.projectId)
-    );
-    user.projects.map((item) => projectIds.push(item.id));
+    // user.receivedProjectInvitations.map((item) =>
+    //   projectIds.push(item.projectId)
+    // );
+    // user.projects.map((item) => projectIds.push(item.id));
     let proms = [];
     projectIds.forEach((projectId) => {
       proms.push(
@@ -384,6 +384,8 @@ export const getProjectInvitations = async (req, res) => {
   try {
     const projectId = req.params.id;
     const role = req.query.role;
+    const status = req.query.status;
+    const invitationType = req.query.invitation_type;
     let whereParams: any = {
       projectId: projectId
     };
@@ -402,6 +404,9 @@ export const getProjectInvitations = async (req, res) => {
       whereParams.userId = req.user.id;
     } else {
       whereParams.inviteeId = req.user.id;
+    }
+    if (status) {
+      whereParams.status = status;
     }
     const projectInvitations = await prisma.projectInvitation.findMany({
       where: whereParams,

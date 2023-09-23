@@ -26,6 +26,41 @@ export const createPlatformInvitation = async (req, res) => {
   }
 };
 
+export const getUserProjectInvitations = async (req, res, next) => {
+  try {
+    const receivedInvitations = await prisma.projectInvitation.findMany({
+      where: {
+        inviteeId: req.user.id
+      },
+      include: {
+        invitedBy: true,
+        invitee: true,
+        project: true
+      }
+    });
+    const sentInvitations = await prisma.projectInvitation.findMany({
+      where: {
+        userId: req.user.id
+      },
+      include: {
+        invitedBy: true,
+        invitee: true,
+        project: true
+      }
+    });
+    receivedInvitations.forEach((invitation: any) => {
+      invitation.invitationType = "received";
+    });
+    sentInvitations.forEach((invitation: any) => {
+      invitation.invitationType = "sent";
+    });
+    const invitations = [...receivedInvitations, ...sentInvitations];
+    res.json({ status: "success", data: invitations, errors: [] });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getUserPlatformInvitations = async (req, res) => {
   const invitations = await prisma.platformInvitation.findMany({
     where: {
