@@ -264,6 +264,8 @@ export const getProjectTasks = async (req, res, next) => {
       });
       const tasks = projectTasks.map((task) => {
         return {
+          id: task.id,
+          projectId: task.projectId,
           created_at: task.createdAt,
           created_by: task.createdBy.username,
           assigned_at: task.createdAt,

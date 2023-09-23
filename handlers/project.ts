@@ -9,33 +9,18 @@ import { slugifyString } from "../modules/utils";
 
 export const getProjects = async (req, res, next) => {
   try {
-    const user = await prisma.user.findUnique({
+    let projects = [];
+    const projectMembers = await prisma.projectMember.findMany({
       where: {
-        id: req.user.id
+        userId: req.user.id
       },
       include: {
-        ProjectMember: true,
-        receivedProjectInvitations: true,
-        projects: true
+        project: true
       }
     });
-    let projectIds = [];
-    user.ProjectMember.map((item) => projectIds.push(item.projectId));
-    // user.receivedProjectInvitations.map((item) =>
-    //   projectIds.push(item.projectId)
-    // );
-    // user.projects.map((item) => projectIds.push(item.id));
-    let proms = [];
-    projectIds.forEach((projectId) => {
-      proms.push(
-        prisma.project.findFirst({
-          where: {
-            id: projectId
-          }
-        })
-      );
+    projectMembers.forEach((member) => {
+      projects.push(member.project);
     });
-    const projects = await Promise.all(proms);
     res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
@@ -62,15 +47,15 @@ export const getProjectsForProjectMember = async (req, res) => {
   }
 };
 
-export const getProject = async (req, res) => {
+export const getProject = async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const project = await prisma.project.findFirst({
       where: {
-        id: projectId,
-        belongsToId: req.user.id
+        id: projectId
       }
     });
+    console.log("===project", project);
     if (project) {
       const projectTasks = await prisma.projectTask.findMany({
         where: {
@@ -94,8 +79,7 @@ export const getProject = async (req, res) => {
       res.send({ message: "Not found" });
     }
   } catch (error) {
-    res.status(404);
-    res.send({ message: "Not found" });
+    next(error);
   }
 };
 
@@ -428,7 +412,7 @@ export const getProjectInvitations = async (req, res) => {
         invitation_to: invitation.invitee.username
       };
     });
-    res.json({ status: "success", data: invitations, errors: [] });
+    res.json({ status: "success", data: projectInvitations, errors: [] });
   } catch (error) {}
 };
 
@@ -482,6 +466,31 @@ export const getProjectMember = async (req, res, next) => {
       const projectMember = await prisma.projectMember.findFirst({
         where: {
           id: memberId
+        }
+      });
+      res.json({ status: "success", data: projectMember, errors: [] });
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserProjectMember = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          projectId: projectId,
+          userId: req.user.id
         }
       });
       res.json({ status: "success", data: projectMember, errors: [] });
@@ -659,7 +668,7 @@ export const getProjectMembers = async (req, res) => {
       },
       include: {
         user: true,
-        projects: true
+        project: true
       }
     });
     res.json({ status: "success", data: projectMembers, errors: [] });
@@ -670,7 +679,7 @@ export const getProjectMembers = async (req, res) => {
       },
       include: {
         user: true,
-        projects: true
+        project: true
       }
     });
     res.json({ status: "success", data: projectMembers, errors: [] });

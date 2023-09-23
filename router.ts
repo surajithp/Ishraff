@@ -8,6 +8,7 @@ import {
   createProjectMember,
   getProjectMembers,
   getProjectMember,
+  getUserProjectMember,
   getPlatformUsers,
   createProjectInvitation,
   getProjectInvitation,
@@ -173,6 +174,8 @@ router.patch(
 );
 
 router.get("/project/:id/members/:memberId", getProjectMember);
+
+router.get("/project/:id/user", getUserProjectMember);
 
 router.delete("/project/:id/members/:memberId", deleteProjectMember);
 
