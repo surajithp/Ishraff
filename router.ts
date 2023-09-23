@@ -140,6 +140,8 @@ router.delete(
   removeProjectInvitation
 );
 
+router.get("/project/:id/invitations", getProjectInvitations);
+
 router.post(
   "/project/:id/attachments",
   upload.single("file"),
@@ -158,8 +160,6 @@ router.get(
   handleInputErrors,
   getProjectAttachments
 );
-
-router.get("/project/:id/invitations", getProjectInvitations);
 
 // router.post("/project/:id/members", createProjectMember);
 
@@ -195,7 +195,11 @@ router.get("/project/:id/updates", getProjectUpdates);
 
 router.get("/project/:id/tasks/:taskId/updates", getTaskUpdates);
 
-router.post("/project/:id/tasks/:taskId/update", createTaskUpdate);
+router.post(
+  "/project/:id/tasks/:taskId/update",
+  upload.single("file"),
+  createTaskUpdate
+);
 
 router.post(
   "/project/:id/tasks/:taskId/update/:updateId/comments",

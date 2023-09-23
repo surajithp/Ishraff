@@ -155,7 +155,7 @@ model TaskUpdate {
   userId            String
   attachmentType    String?
   attachmentSize    BigInt?
-  attachmentFileKey String?         
+  attachmentFileKey String?
   attachmentName    String?
   rating            Float?
   isFlagged         Boolean          @default(false)

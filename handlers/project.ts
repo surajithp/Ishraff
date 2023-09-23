@@ -519,7 +519,6 @@ export const deleteProjectMember = async (req, res, next) => {
           memberId: memberId
         }
       });
-      console.log("=tasks", tasks);
       let proms = [];
       tasks.forEach((task) =>
         proms.push(

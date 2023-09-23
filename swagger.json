@@ -417,6 +417,27 @@
         }
       }
     },
+    "/api/project/{id}/invitation/{id}": {
+      "delete": {
+        "summary": "Delete Project Invitation",
+        "description": "Delete Project Invitation",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectInvitationResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/project/{projectId}/invitations": {
       "get": {
         "summary": "Get Project Invitations",
@@ -512,6 +533,27 @@
         }
       }
     },
+    "/api/project/{projectId}/members?role=manager,worker,guest": {
+      "get": {
+        "summary": "Get Project Members Role",
+        "description": "Get Project Members with role filter",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectMemberResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/project/{projectId}/attachments": {
       "post": {
         "summary": "Add Project Attachment",
@@ -522,6 +564,329 @@
             "description": "successful operation",
             "schema": {
               "$ref": "#/definitions/projectAttachmentResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{id}/attachments": {
+      "get": {
+        "summary": "Get Project Attachments",
+        "description": "Get Project Attachments",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectAttachmentResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/attachments/{attachmentId}": {
+      "delete": {
+        "summary": "Delete Project Attachment",
+        "description": "Delete Project Attachment",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectAttachmentResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks": {
+      "post": {
+        "summary": "Create Project task",
+        "description": "Create Project Task",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Project Task creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "memberId": {
+                  "type": "string"
+                },
+                "managedMemberId": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string"
+                },
+                "endDate": {
+                  "type": "string"
+                },
+                "startTime": {
+                  "type": "string"
+                },
+                "endTime": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}": {
+      "patch": {
+        "summary": "Update Project task",
+        "description": "Update Project Task",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Update Project Task payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["COMPLETED,ARCHIVED,REOPENED"]
+                },
+                "startDate": {
+                  "type": "string"
+                },
+                "endDate": {
+                  "type": "string"
+                },
+                "startTime": {
+                  "type": "string"
+                },
+                "endTime": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks?status=IN_PROGRESS,COMPLETED": {
+      "get": {
+        "summary": "Get Project tasks",
+        "description": "Create Project Task",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/update": {
+      "post": {
+        "summary": "Create Project task update",
+        "description": "Create Project Task update",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Project Task update creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "latitude": {
+                  "type": "float"
+                },
+                "longitude": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskUpdateResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/updates": {
+      "get": {
+        "summary": "Get Project task updates",
+        "description": "Get Project Task update",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskUpdateResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/updates": {
+      "get": {
+        "summary": "Get Project  updates",
+        "description": "Get Project  update",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/projectTaskUpdateResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/update/{updateId}/comments": {
+      "post": {
+        "summary": "Create Task update comment",
+        "description": "Create Task update comment",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Create Task update Comment creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "memberId": {
+                  "type": "string"
+                },
+                "comment": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/taskUpdateCommentResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{id}/tasks/{taskId}/update/{updateId}/comments": {
+      "get": {
+        "summary": "Get Task update comments",
+        "description": "Get Task update comments",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/taskUpdateCommentResponse"
             }
           },
           "400": {
@@ -747,6 +1112,147 @@
               "type": "string"
             },
             "updatedAt": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "projectTaskResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "userId": {
+              "type": "string"
+            },
+            "memberId": {
+              "type": "string"
+            },
+            "projectId": {
+              "type": "string"
+            },
+            "managedUserId": {
+              "type": "string"
+            },
+            "managedUserName": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "startDate": {
+              "type": "string"
+            },
+            "endDate": {
+              "type": "string"
+            },
+            "startTime": {
+              "type": "string"
+            },
+            "endTime": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "projectTaskUpdateResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "userId": {
+              "type": "string"
+            },
+            "taskId": {
+              "type": "string"
+            },
+            "projectId": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "attachmentName": {
+              "type": "string"
+            },
+            "attachementFileKey": {
+              "type": "string"
+            },
+            "attachmentType": {
+              "type": "string"
+            },
+            "attachmentSize": {
+              "type": "string"
+            },
+            "latitude": {
+              "type": "string"
+            },
+            "longitude": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "taskUpdateCommentResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "taskUpdateId": {
+              "type": "string"
+            },
+            "memberId": {
+              "type": "string"
+            },
+            "comment": {
               "type": "string"
             }
           }

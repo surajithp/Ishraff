@@ -71,6 +71,7 @@ export const createProjectTask = async (req, res, next) => {
                 projectId: projectId,
                 managedUserId: managedUser.user.id,
                 managedUserName: managedUser.user.username,
+                createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 status: "DRAFT",
                 startDate: req.body?.startDate,
@@ -240,10 +241,18 @@ export const getProjectTasks = async (req, res, next) => {
       }
     });
     if (projectDetails) {
+      const status = req.query.status;
+      let whereParam: any = {
+        projectId: projectId
+      };
+      if (status) {
+        whereParam = {
+          projectId: projectId,
+          status: status
+        };
+      }
       const projectTasks = await prisma.projectTask.findMany({
-        where: {
-          projectId: projectId
-        },
+        where: whereParam,
         include: {
           assignedTo: {
             include: {
