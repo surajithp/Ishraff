@@ -4,6 +4,7 @@ import { createJWT, hashPassword, comparePasswords } from "../modules/auth";
 export const createNewUser = async (req, res, next) => {
   const hash = await hashPassword(req.body.password);
   try {
+    const senderId = req.query.referral_code;
     const user = await prisma.user.create({
       data: {
         username: req.body.username,
@@ -12,6 +13,15 @@ export const createNewUser = async (req, res, next) => {
         phoneNumber: req.body.phoneNumber
       }
     });
+    if (senderId) {
+      await prisma.platformInvitation.create({
+        data: {
+          senderId: senderId,
+          receiverId: user.id,
+          status: "accepted"
+        }
+      });
+    }
     const { password, ...rest } = user;
     const token = createJWT(user);
     res.json({ user: user, token: token });

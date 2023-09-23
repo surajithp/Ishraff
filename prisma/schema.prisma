@@ -34,7 +34,7 @@ model PlatformInvitation {
   updatedAt  DateTime @default(now())
   senderId   String
   senderName String?
-  user       User     @relation("User", fields: [senderId], references: [id])
+  invitedBy  User     @relation("User", fields: [senderId], references: [id])
   receiverId String
   invitee    User     @relation("Invitee", fields: [receiverId], references: [id])
   status     String

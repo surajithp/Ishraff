@@ -55,7 +55,6 @@ export const getProject = async (req, res, next) => {
         id: projectId
       }
     });
-    console.log("===project", project);
     if (project) {
       const projectTasks = await prisma.projectTask.findMany({
         where: {
@@ -66,13 +65,25 @@ export const getProject = async (req, res, next) => {
       const completedTasks = projectTasks.filter(
         (task) => task.status === "COMPLETED"
       );
-      const data = {
+      const data: any = {
         ...project,
         tasksSummary: {
           totalTasks: totalTasks.length,
           completedTasks: completedTasks.length
         }
       };
+      const memberDetails = req.query.member_details;
+      if (memberDetails) {
+        const projectMember = await prisma.projectMember.findFirst({
+          where: {
+            projectId: projectId,
+            userId: req.user.id
+          }
+        });
+        if (projectMember) {
+          data.projectMember = projectMember;
+        }
+      }
       res.json({ status: "success", data: data, errors: [] });
     } else {
       res.status(404);

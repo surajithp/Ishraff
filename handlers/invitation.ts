@@ -77,7 +77,7 @@ export const getUserPlatformInvitations = async (req, res) => {
       senderId: req.user.id
     },
     include: {
-      user: {
+      invitedBy: {
         select: {
           email: true,
           username: true,
