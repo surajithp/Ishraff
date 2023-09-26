@@ -153,7 +153,7 @@ router.post(
   createProjectAttachment
 );
 
-router.post(
+router.delete(
   "/project/:id/attachments/:attachmentId",
   handleInputErrors,
   deleteProjectAttachment

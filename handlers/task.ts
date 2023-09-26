@@ -2,6 +2,11 @@ import prisma from "../db";
 
 export const createProjectTask = async (req, res, next) => {
   try {
+    let isDraft = false;
+    let status: any = "in_progress";
+    if (req.query.draft) {
+      isDraft = true;
+    }
     const projectId = req.params.id;
     const projectDetails = await prisma.project.findFirst({
       where: {
@@ -62,6 +67,9 @@ export const createProjectTask = async (req, res, next) => {
             });
           }
           if (assignedMember) {
+            if (isDraft) {
+              status = "draft";
+            }
             const task = await prisma.projectTask.create({
               data: {
                 name: req.body.name,
@@ -73,7 +81,7 @@ export const createProjectTask = async (req, res, next) => {
                 managedUserName: managedUser.user.username,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                status: "DRAFT",
+                status: status,
                 startDate: req.body?.startDate,
                 startTime: req.body?.startTime,
                 endDate: req.body?.endDate,
@@ -186,14 +194,14 @@ export const updateProjectTask = async (req, res, next) => {
           const data = {
             ...req.body
           };
-          if (status === "COMPLETED") {
-            data.isCompleted = true;
+          if (status === "completed") {
+            data.iscompleted = true;
           }
           if (status === "ARCHIVED") {
             data.isArchived = true;
           }
           if (status === "REOPENED") {
-            if (taskDetails.status === "COMPLETED") {
+            if (taskDetails.status === "completed") {
               data.isReopened = true;
             } else {
               throw new Error("Cannot reopen a task which is not completed");
@@ -292,5 +300,47 @@ export const getProjectTasks = async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+  }
+};
+
+export const updateAllTasks = async () => {
+  const date = new Date();
+
+  let day = date.getDate();
+  let month = date.getMonth() + 1;
+  let year = date.getFullYear();
+
+  // This arrangement can be altered based on how we want the date's format to appear.
+  let currentDate = `${day}-${month}-${year}`;
+  try {
+    await prisma.projectTask.updateMany({
+      where: {
+        startDate: null,
+        startTime: null
+      },
+      data: {
+        status: "in_progress"
+      }
+    });
+    await prisma.projectTask.updateMany({
+      where: {
+        startDate: { gte: currentDate },
+        startTime: { not: null }
+      },
+      data: {
+        status: "draft"
+      }
+    });
+    await prisma.projectTask.updateMany({
+      where: {
+        endDate: { lte: currentDate },
+        endTime: { not: null }
+      },
+      data: {
+        status: "overdue"
+      }
+    });
+  } catch (error) {
+    console.log("=====tasks updation failed");
   }
 };

@@ -12,12 +12,19 @@ const express = require("express");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
+const CronJob = require("node-cron");
+import { updateAllTasks } from "./handlers/task";
 
 const port = 3000;
 
 dotenv.config();
 
 // app.use(express.static("static"));
+
+// CronJob.schedule("* */12 * * * *", function () {
+//   getAllTasks();
+//   updateAllTasks();
+// });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -51,7 +51,7 @@ export const createTaskUpdate = async (req, res, next) => {
                 latitude: req.body.latitude,
                 rating: null,
                 userId: req.user.id,
-                status: "IN_PROGRESS",
+                status: "in_review",
                 submittedOn: null,
                 attachmentName: fileName,
                 attachmentFileKey: objectKey,

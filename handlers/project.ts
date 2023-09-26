@@ -63,7 +63,7 @@ export const getProject = async (req, res, next) => {
       });
       const totalTasks = projectTasks;
       const completedTasks = projectTasks.filter(
-        (task) => task.status === "COMPLETED"
+        (task) => task.status === "completed"
       );
       const data: any = {
         ...project,
@@ -671,8 +671,33 @@ export const getPlatformUsers = async (req, res, next) => {
 export const getProjectMembers = async (req, res) => {
   const projectId = req.params.id;
   const role = req.query.role;
-  if (role) {
-    const projectMembers = await prisma.projectMember.findMany({
+  let searchParam = req.query.searchText;
+  let projectMembers = [];
+  if (searchParam) {
+    projectMembers = await prisma.projectMember.findMany({
+      where: {
+        projectId: projectId
+      },
+      include: {
+        user: true,
+        project: true
+      }
+    });
+    projectMembers = projectMembers.filter((member) => {
+      const user = member.user;
+      if (user.username.toLowerCase().indexOf(searchParam) > -1) {
+        return true;
+      }
+      if (user.email.toLowerCase().indexOf(searchParam) > -1) {
+        return true;
+      }
+      if (user.phoneNumber.toLowerCase().indexOf(searchParam) > -1) {
+        return true;
+      }
+      return false;
+    });
+  } else if (role) {
+    projectMembers = await prisma.projectMember.findMany({
       where: {
         projectId: projectId,
         role: role
@@ -684,7 +709,7 @@ export const getProjectMembers = async (req, res) => {
     });
     res.json({ status: "success", data: projectMembers, errors: [] });
   } else {
-    const projectMembers = await prisma.projectMember.findMany({
+    projectMembers = await prisma.projectMember.findMany({
       where: {
         projectId: projectId
       },
@@ -865,5 +890,47 @@ export const getProjectAttachments = async (req, res) => {
   } catch (error) {
     res.status(422);
     res.send({ message: error });
+  }
+};
+
+export const updateAllProjects = async () => {
+  const date = new Date();
+
+  let day = date.getDate();
+  let month = date.getMonth() + 1;
+  let year = date.getFullYear();
+
+  // This arrangement can be altered based on how we want the date's format to appear.
+  let currentDate = `${day}-${month}-${year}`;
+  try {
+    await prisma.project.updateMany({
+      where: {
+        startDate: null,
+        startTime: null
+      },
+      data: {
+        status: "in_progress"
+      }
+    });
+    await prisma.project.updateMany({
+      where: {
+        startDate: { gte: currentDate },
+        startTime: { not: null }
+      },
+      data: {
+        status: "in_progress"
+      }
+    });
+    await prisma.project.updateMany({
+      where: {
+        endDate: { lte: currentDate },
+        endTime: { not: null }
+      },
+      data: {
+        status: "overdue"
+      }
+    });
+  } catch (error) {
+    console.log("=====tasks updation failed");
   }
 };
