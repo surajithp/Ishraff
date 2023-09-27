@@ -240,6 +240,60 @@ export const updateProjectTask = async (req, res, next) => {
   }
 };
 
+export const getProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const task = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        },
+        include: {
+          assignedTo: {
+            include: {
+              user: true
+            }
+          },
+          createdBy: true
+        }
+      });
+      const taskDetails = {
+        id: task.id,
+        projectId: task.projectId,
+        created_at: task.createdAt,
+        created_by: task.createdBy.username,
+        assigned_at: task.createdAt,
+        assigned_to: task.assignedTo.user.username,
+        managed_by: task.managedUserName,
+        status: task.status,
+        name: task.name,
+        due_by: task.endDate
+      };
+      if (taskDetails) {
+        res.json({
+          status: "success",
+          data: taskDetails,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Project does not have tasks" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getProjectTasks = async (req, res, next) => {
   try {
     const projectId = req.params.id;
@@ -278,7 +332,7 @@ export const getProjectTasks = async (req, res, next) => {
           created_by: task.createdBy.username,
           assigned_at: task.createdAt,
           assigned_to: task.assignedTo.user.username,
-          managed_by: task.managedUserId,
+          managed_by: task.managedUserName,
           status: task.status,
           name: task.name,
           due_by: task.endDate

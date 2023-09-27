@@ -195,6 +195,8 @@ router.post(
 
 router.patch("/project/:id/tasks/:taskId", updateProjectTask);
 
+router.get("/project/:id/tasks/:taskId", getProjectTask);
+
 router.get("/project/:id/tasks", getProjectTasks);
 
 router.get("/project/:id/updates", getProjectUpdates);
