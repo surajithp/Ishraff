@@ -25,6 +25,7 @@ import {
 import {
   createProjectTask,
   getProjectTasks,
+  getProjectTask,
   updateProjectTask
 } from "./handlers/task";
 import {
