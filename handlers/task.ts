@@ -244,6 +244,7 @@ export const getProjectTask = async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const taskId = req.params.taskId;
+    const showDetails = req.query.details;
     const projectDetails = await prisma.project.findFirst({
       where: {
         id: projectId
@@ -276,11 +277,19 @@ export const getProjectTask = async (req, res, next) => {
         due_by: task.endDate
       };
       if (taskDetails) {
-        res.json({
-          status: "success",
-          data: taskDetails,
-          errors: []
-        });
+        if (showDetails) {
+          res.json({
+            status: "success",
+            data: taskDetails,
+            errors: []
+          });
+        } else {
+          res.json({
+            status: "success",
+            data: task,
+            errors: []
+          });
+        }
       } else {
         res.status(422);
         res.send({ message: "Project does not have tasks" });
