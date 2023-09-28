@@ -671,7 +671,7 @@ export const getPlatformUsers = async (req, res, next) => {
 export const getProjectMembers = async (req, res) => {
   const projectId = req.params.id;
   const role = req.query.role;
-  const showTaskDetails = req.query.tasks;
+  const showTaskDetails = req.query.tasks_summary;
   let searchParam = req.query.searchText;
   let projectMembers = [];
   if (searchParam) {

@@ -366,6 +366,47 @@ export const getProjectTasks = async (req, res, next) => {
   }
 };
 
+export const getProjectMemberTasks = async (req, res, next) => {
+  try {
+    const projectId = req.params.projectId;
+    const memberId = req.params.memberId;
+    const projectMember = await prisma.projectMember.findFirst({
+      where: {
+        id: memberId,
+        projectId: projectId
+      }
+    });
+    if (projectMember) {
+      const tasks = await prisma.projectTask.findMany({
+        where: {
+          OR: [
+            {
+              memberId: memberId
+            },
+            { managedUserId: projectMember.userId },
+            { userId: projectMember.userId }
+          ]
+        }
+      });
+      if (tasks) {
+        res.json({
+          status: "success",
+          data: tasks,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Project does not have tasks" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project Member does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const updateAllTasks = async () => {
   const date = new Date();
 
