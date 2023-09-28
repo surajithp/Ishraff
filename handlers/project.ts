@@ -464,21 +464,56 @@ export const createProjectMember = async (req, res, next) => {
 };
 
 export const getProjectMember = async (req, res, next) => {
-  console.log("===entered");
   try {
     const projectId = req.params.id;
     const memberId = req.params.memberId;
+    const showTaskDetails = req.query.tasks_summary;
     const projectDetails = await prisma.project.findFirst({
       where: {
         id: projectId
       }
     });
     if (projectDetails) {
-      const projectMember = await prisma.projectMember.findFirst({
+      const projectMember: any = await prisma.projectMember.findFirst({
         where: {
           id: memberId
         }
       });
+      if (showTaskDetails) {
+        const projectTasks = await prisma.projectTask.findMany({
+          where: {
+            projectId: projectId,
+            isArchived: false
+          }
+        });
+        const assignedTasks = projectTasks.filter(
+          (task) => task.memberId === projectMember.id
+        );
+        const createdTasks = projectTasks.filter(
+          (task) => task.userId === projectMember.userId
+        );
+        const managedTasks = projectTasks.filter((task) => {
+          (task) => task.managedUserId === projectMember.userId;
+        });
+        const inProgressTasks = assignedTasks.filter(
+          (task) => task.status === "in_progress"
+        );
+        const inReviewTasks = assignedTasks.filter(
+          (task) => task.status === "in_review"
+        );
+        const approvedTasks = managedTasks.filter(
+          (task) => task.status === "completed"
+        );
+        const tasksSummary = {
+          assignedTasks: assignedTasks.length,
+          createdTasks: createdTasks.length,
+          managedTasks: managedTasks.length,
+          inProgressTasks: inProgressTasks.length,
+          approvedTasks: approvedTasks.length,
+          inreviewTasks: inReviewTasks.length
+        };
+        projectMember.tasksSummary = tasksSummary;
+      }
       res.json({ status: "success", data: projectMember, errors: [] });
     } else {
       res.status(422);
@@ -562,45 +597,142 @@ export const changeProjectMemberRole = async (req, res, next) => {
 export const deleteProjectMember = async (req, res, next) => {
   try {
     const memberId = req.params.memberId;
-    const projectMember = await prisma.projectMember.findFirst({
+    const projectId = req.params.projectId;
+    const userProjectMemberDetails = await prisma.projectMember.findFirst({
       where: {
-        id: memberId
+        userId: req.user.id
       }
     });
-    if (projectMember) {
-      const tasks = await prisma.projectTask.findMany({
+    if (userProjectMemberDetails && userProjectMemberDetails.role === "admin") {
+      const projectMember = await prisma.projectMember.findFirst({
         where: {
-          memberId: memberId
+          id: memberId,
+          projectId: projectId
         }
       });
-      let proms = [];
-      tasks.forEach((task) =>
-        proms.push(
-          prisma.projectTask.delete({
-            where: {
-              id: task.id
-            }
-          })
-        )
-      );
-      await Promise.all(proms);
-      const member = await prisma.projectMember.delete({
-        where: {
-          id: memberId
-        }
-      });
-      if (member) {
-        res.json({
-          status: "success",
-          message: "Project Member removed successfully"
+      if (projectMember) {
+        const member = await prisma.projectMember.update({
+          where: {
+            id: memberId
+          },
+          data: {
+            isArchived: true
+          }
         });
+        if (member) {
+          if (projectMember.role === "worker") {
+            await prisma.projectTask.updateMany({
+              where: {
+                memberId: memberId
+              },
+              data: {
+                memberId: userProjectMemberDetails.id
+              }
+            });
+          } else if (projectMember.role === "manager") {
+            await prisma.projectTask.updateMany({
+              where: {
+                memberId: memberId
+              },
+              data: {
+                memberId: userProjectMemberDetails.id
+              }
+            });
+            await prisma.projectTask.updateMany({
+              where: {
+                managedUserId: projectMember.userId
+              },
+              data: {
+                managedUserId: userProjectMemberDetails.userId
+              }
+            });
+          }
+          res.json({
+            status: "success",
+            message: "Project Member removed successfully"
+          });
+        } else {
+          res.status(422);
+          res.send({ message: "Project Member removal failed" });
+        }
       } else {
         res.status(422);
-        res.send({ message: "Project Member removal failed" });
+        res.send({ message: "Project Member does not exist" });
       }
     } else {
       res.status(422);
-      res.send({ message: "Project Member does not exist" });
+      res.send({
+        message: "User does not have access to remove project member"
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProjectMember = async (req, res, next) => {
+  try {
+    const changeRole = req.body.role;
+    const memberId = req.params.memberId;
+    const projectId = req.params.projectId;
+    const userProjectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id
+      }
+    });
+    if (userProjectMemberDetails && userProjectMemberDetails.role === "admin") {
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          id: memberId,
+          projectId: projectId
+        }
+      });
+      if (projectMember) {
+        if (
+          projectMember.role !== changeRole &&
+          changeRole !== "admin" &&
+          changeRole === "guest"
+        ) {
+          const member = await prisma.projectMember.update({
+            where: {
+              id: memberId
+            },
+            data: {
+              role: changeRole
+            }
+          });
+          if (member) {
+            if (projectMember.role === "manager" && changeRole === "worker") {
+              await prisma.projectTask.updateMany({
+                where: {
+                  managedUserId: projectMember.userId
+                },
+                data: {
+                  managedUserId: userProjectMemberDetails.userId
+                }
+              });
+            }
+            res.json({
+              status: "success",
+              message: "Project Member Role updated successfully"
+            });
+          } else {
+            res.status(422);
+            res.send({ message: "Project Member Role updation failed" });
+          }
+        } else {
+          res.status(422);
+          res.send({ message: "Project Member Role cannot change" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Project Member does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({
+        message: "User does not have access to remove project member"
+      });
     }
   } catch (error) {
     next(error);
@@ -677,7 +809,8 @@ export const getProjectMembers = async (req, res) => {
   if (searchParam) {
     projectMembers = await prisma.projectMember.findMany({
       where: {
-        projectId: projectId
+        projectId: projectId,
+        isArchived: false
       },
       include: {
         user: true,
@@ -722,7 +855,8 @@ export const getProjectMembers = async (req, res) => {
   if (showTaskDetails) {
     const projectTasks = await prisma.projectTask.findMany({
       where: {
-        projectId: projectId
+        projectId: projectId,
+        isArchived: false
       }
     });
     projectMembers.forEach((member) => {

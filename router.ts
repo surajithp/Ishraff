@@ -6,6 +6,7 @@ import {
   getProject,
   getProjects,
   createProjectMember,
+  updateProjectMember,
   getProjectMembers,
   getProjectMember,
   getUserProjectMember,
@@ -178,6 +179,8 @@ router.patch(
 router.get("/project/:id/members/:memberId", getProjectMember);
 
 router.get("/project/:id/user", getUserProjectMember);
+
+router.patch("/project/:id/members/:memberId", updateProjectMember);
 
 router.delete("/project/:id/members/:memberId", deleteProjectMember);
 
