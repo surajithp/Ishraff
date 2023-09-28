@@ -671,6 +671,7 @@ export const getPlatformUsers = async (req, res, next) => {
 export const getProjectMembers = async (req, res) => {
   const projectId = req.params.id;
   const role = req.query.role;
+  const showTaskDetails = req.query.tasks;
   let searchParam = req.query.searchText;
   let projectMembers = [];
   if (searchParam) {
@@ -707,7 +708,6 @@ export const getProjectMembers = async (req, res) => {
         project: true
       }
     });
-    res.json({ status: "success", data: projectMembers, errors: [] });
   } else {
     projectMembers = await prisma.projectMember.findMany({
       where: {
@@ -718,8 +718,44 @@ export const getProjectMembers = async (req, res) => {
         project: true
       }
     });
-    res.json({ status: "success", data: projectMembers, errors: [] });
   }
+  if (showTaskDetails) {
+    const projectTasks = await prisma.projectTask.findMany({
+      where: {
+        projectId: projectId
+      }
+    });
+    projectMembers.forEach((member) => {
+      const assignedTasks = projectTasks.filter(
+        (task) => task.memberId === member.id
+      );
+      const createdTasks = projectTasks.filter(
+        (task) => task.userId === member.userId
+      );
+      const managedTasks = projectTasks.filter((task) => {
+        (task) => task.managedUserId === member.userId;
+      });
+      const inProgressTasks = assignedTasks.filter(
+        (task) => task.status === "in_progress"
+      );
+      const inReviewTasks = assignedTasks.filter(
+        (task) => task.status === "in_review"
+      );
+      const approvedTasks = managedTasks.filter(
+        (task) => task.status === "completed"
+      );
+      const tasksSummary = {
+        assignedTasks: assignedTasks.length,
+        createdTasks: createdTasks.length,
+        managedTasks: managedTasks.length,
+        inProgressTasks: inProgressTasks.length,
+        approvedTasks: approvedTasks.length,
+        inreviewTasks: inReviewTasks.length
+      };
+      member.tasksSummary = tasksSummary;
+    });
+  }
+  res.json({ status: "success", data: projectMembers, errors: [] });
 };
 
 export const createProjectAttachment = async (req, res, next) => {

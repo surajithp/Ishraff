@@ -65,6 +65,9 @@ export const createTaskUpdate = async (req, res, next) => {
               errors: []
             });
           }
+        } else {
+          res.status(422);
+          res.send({ message: "Update attachment does not exist" });
         }
       } else {
         res.status(422);
