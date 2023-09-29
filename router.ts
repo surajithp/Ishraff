@@ -42,6 +42,7 @@ import {
   createTaskUpdateComment,
   getTaskUpdateComments,
   getProjectUpdates,
+  updateTaskUpdate,
   getTaskUpdates
 } from "./handlers/taskUpdate";
 import multer from "multer";
@@ -218,6 +219,8 @@ router.post(
   upload.single("file"),
   createTaskUpdate
 );
+
+router.patch("/project/:id/tasks/:taskId/update/:updateId", updateTaskUpdate);
 
 router.post(
   "/project/:id/tasks/:taskId/update/:updateId/comments",

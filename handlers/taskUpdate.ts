@@ -82,6 +82,49 @@ export const createTaskUpdate = async (req, res, next) => {
   }
 };
 
+export const updateTaskUpdate = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const updateId = req.params.updateId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskId = req.params.taskId;
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails) {
+        const attachment = await prisma.taskUpdate.update({
+          where: {
+            id: updateId
+          },
+          data: {
+            ...req.body
+          }
+        });
+        res.json({
+          status: "success",
+          data: attachment,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Task details does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createTaskUpdateComment = async (req, res, next) => {
   try {
     const projectId = req.params.id;
