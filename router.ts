@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handleInputErrors } from "./modules/middleware";
+import { uploadProfileImage } from "./handlers/user";
 import {
   createProject,
   getProject,
@@ -61,6 +62,8 @@ router.post("/platform/invitation", createPlatformInvitation);
 router.get("/platform/invitations", getUserPlatformInvitations);
 
 router.get("/project/invitations", getUserProjectInvitations);
+
+router.post("/user/profile-image", upload.single("file"), uploadProfileImage);
 
 router.post(
   "/project",

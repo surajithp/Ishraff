@@ -10,6 +10,7 @@ import { slugifyString } from "../modules/utils";
 export const getProjects = async (req, res, next) => {
   try {
     let projects = [];
+    const status = req.query.status;
     const projectMembers = await prisma.projectMember.findMany({
       where: {
         userId: req.user.id
@@ -21,6 +22,9 @@ export const getProjects = async (req, res, next) => {
     projectMembers.forEach((member) => {
       projects.push(member.project);
     });
+    if (status) {
+      projects = projects.filter((item) => item.status === status);
+    }
     res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
@@ -477,6 +481,9 @@ export const getProjectMember = async (req, res, next) => {
       const projectMember: any = await prisma.projectMember.findFirst({
         where: {
           id: memberId
+        },
+        include: {
+          user: true
         }
       });
       if (showTaskDetails) {

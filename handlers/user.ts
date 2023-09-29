@@ -1,4 +1,12 @@
 import prisma from "../db";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command
+} from "@aws-sdk/client-s3";
+import { slugifyString } from "../modules/utils";
+
 import { createJWT, hashPassword, comparePasswords } from "../modules/auth";
 
 export const createNewUser = async (req, res, next) => {
@@ -52,6 +60,59 @@ export const signin = async (req, res, next) => {
     const { password, ...rest } = user;
 
     res.json({ user: rest, token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadProfileImage = async (req, res, next) => {
+  try {
+    if (req.file) {
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype;
+      const objectKey = `${slugifyString(
+        Date.now().toString()
+      )}-${slugifyString(fileName)}`;
+      const S3 = new S3Client({
+        region: "auto",
+        endpoint: process.env.ENDPOINT,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+        }
+      });
+      const response = await S3.send(
+        new PutObjectCommand({
+          Body: req.file.buffer,
+          Bucket: process.env.BUCKET_NAME,
+          Key: objectKey,
+          ContentType: fileType
+        })
+      );
+      if (response) {
+        const user = await prisma.user.update({
+          where: {
+            id: req.user.id
+          },
+          data: {
+            profileImageKey: objectKey
+          }
+        });
+        if (user) {
+          res.json({
+            status: "success",
+            data: user,
+            errors: []
+          });
+        } else {
+          res.status(422);
+          res.send({ message: "Profile Image updation failed" });
+        }
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "No file existed" });
+    }
   } catch (error) {
     next(error);
   }

@@ -18,6 +18,7 @@ model User {
   password                    String
   phoneNumber                 String               @unique
   email                       String               @unique
+  profileImageKey             String               @default("")
   projects                    Project[]
   ProjectMember               ProjectMember[]
   receivedPlatformInvitations PlatformInvitation[] @relation(name: "Invitee")
