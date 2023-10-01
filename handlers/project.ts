@@ -13,7 +13,8 @@ export const getProjects = async (req, res, next) => {
     const status = req.query.status;
     const projectMembers = await prisma.projectMember.findMany({
       where: {
-        userId: req.user.id
+        userId: req.user.id,
+        isArchived: false
       },
       include: {
         project: true
@@ -841,6 +842,7 @@ export const getProjectMembers = async (req, res) => {
     projectMembers = await prisma.projectMember.findMany({
       where: {
         projectId: projectId,
+        isArchived: false,
         role: role
       },
       include: {
@@ -851,7 +853,8 @@ export const getProjectMembers = async (req, res) => {
   } else {
     projectMembers = await prisma.projectMember.findMany({
       where: {
-        projectId: projectId
+        projectId: projectId,
+        isArchived: false
       },
       include: {
         user: true,

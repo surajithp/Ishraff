@@ -370,23 +370,37 @@ export const getProjectMemberTasks = async (req, res, next) => {
   try {
     const projectId = req.params.projectId;
     const memberId = req.params.memberId;
+    const status = req.query.status;
     const projectMember = await prisma.projectMember.findFirst({
       where: {
         id: memberId,
         projectId: projectId
       }
     });
+    let whereParam: any = {
+      OR: [
+        {
+          memberId: memberId
+        },
+        { managedUserId: projectMember.userId },
+        { userId: projectMember.userId }
+      ]
+    };
+    if (status) {
+      whereParam = {
+        OR: [
+          {
+            memberId: memberId
+          },
+          { managedUserId: projectMember.userId },
+          { userId: projectMember.userId }
+        ],
+        status: status
+      };
+    }
     if (projectMember) {
       const tasks = await prisma.projectTask.findMany({
-        where: {
-          OR: [
-            {
-              memberId: memberId
-            },
-            { managedUserId: projectMember.userId },
-            { userId: projectMember.userId }
-          ]
-        }
+        where: whereParam
       });
       if (tasks) {
         res.json({
