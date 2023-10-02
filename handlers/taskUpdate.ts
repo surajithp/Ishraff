@@ -186,6 +186,9 @@ export const getTaskUpdates = async (req, res, next) => {
       }
       const taskUpdates = await prisma.taskUpdate.findMany({
         where: whereParam,
+        orderBy: {
+          createdAt: "desc"
+        },
         include: {
           task: true,
           createdBy: true
