@@ -401,6 +401,9 @@ export const getProjectTasks = async (req, res, next) => {
             }
           },
           createdBy: true
+        },
+        orderBy: {
+          createdAt: "desc"
         }
       });
       const tasks = projectTasks.map((task) => {
