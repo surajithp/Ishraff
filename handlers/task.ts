@@ -221,7 +221,8 @@ export const updateProjectTask = async (req, res, next) => {
           if (managedMemberId) {
             const managedMember = await prisma.projectMember.findFirst({
               where: {
-                id: managedMemberId
+                projectId: projectId,
+                userId: managedMemberId
               },
               include: {
                 user: true
@@ -229,7 +230,7 @@ export const updateProjectTask = async (req, res, next) => {
             });
             if (
               managedMember &&
-              managedMember.userId !== taskDetails.managedUserId
+              managedMemberId !== taskDetails.managedUserId
             ) {
               data.managedUserId = managedMember.userId;
               data.managedUserName = managedMember.user.username;
