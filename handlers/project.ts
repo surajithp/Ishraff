@@ -409,6 +409,9 @@ export const getProjectInvitations = async (req, res) => {
     }
     const projectInvitations = await prisma.projectInvitation.findMany({
       where: whereParams,
+      orderBy: {
+        createdAt: "desc"
+      },
       include: {
         invitee: true,
         invitedBy: true,
@@ -820,6 +823,9 @@ export const getProjectMembers = async (req, res) => {
         projectId: projectId,
         isArchived: false
       },
+      orderBy: {
+        createdAt: "desc"
+      },
       include: {
         user: true,
         project: true
@@ -834,6 +840,9 @@ export const getProjectMembers = async (req, res) => {
         return true;
       }
       if (user.phoneNumber.toLowerCase().indexOf(searchParam) > -1) {
+        return true;
+      }
+      if (member.id.indexOf(searchParam) > -1) {
         return true;
       }
       return false;

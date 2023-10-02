@@ -978,6 +978,107 @@
           }
         }
       }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/update/{updateId}/ratings": {
+      "post": {
+        "summary": "Create Task update Rating",
+        "description": "Create Task update rating",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Create Task update Rating creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "memberId": {
+                  "type": "string"
+                },
+                "rating": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/taskUpdateRatingResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/update/{updateId}/ratings/{ratingId}": {
+      "patch": {
+        "summary": "Update Task update Rating",
+        "description": "Update Task update rating",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Update Task update Rating creation payload",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "memberId": {
+                  "type": "string"
+                },
+                "rating": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/taskUpdateRatingResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/project/{projectId}/tasks/{taskId}/update/{id}/ratings": {
+      "get": {
+        "summary": "Get Task update Ratings",
+        "description": "Get Task update rating",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/taskUpdateRatingResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid status value",
+            "schema": {
+              "$ref": "#/definitions/InvalidResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1334,6 +1435,40 @@
               "type": "string"
             },
             "comment": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "taskUpdateRatingResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "taskUpdateId": {
+              "type": "string"
+            },
+            "memberId": {
+              "type": "string"
+            },
+            "rating": {
+              "type": "string"
+            },
+            "taskId": {
               "type": "string"
             }
           }

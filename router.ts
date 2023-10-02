@@ -29,6 +29,7 @@ import {
   getProjectTasks,
   getProjectMemberTasks,
   getProjectTask,
+  getProjectTaskModifications,
   updateProjectTask
 } from "./handlers/task";
 import {
@@ -39,11 +40,14 @@ import {
 } from "./handlers/invitation";
 import {
   createTaskUpdate,
+  createTaskUpdateRating,
   createTaskUpdateComment,
   getTaskUpdateComments,
   getProjectUpdates,
   updateTaskUpdate,
-  getTaskUpdates
+  getTaskUpdates,
+  getTaskUpdateRatings,
+  updateTaskUpdateRating
 } from "./handlers/taskUpdate";
 import multer from "multer";
 
@@ -206,6 +210,11 @@ router.patch("/project/:id/tasks/:taskId", updateProjectTask);
 
 router.get("/project/:id/tasks/:taskId", getProjectTask);
 
+router.get(
+  "/project/:id/tasks/:taskId/modifications",
+  getProjectTaskModifications
+);
+
 router.get("/project/:id/tasks", getProjectTasks);
 
 router.get("/project/:id/members/:memberId/tasks", getProjectMemberTasks);
@@ -221,6 +230,21 @@ router.post(
 );
 
 router.patch("/project/:id/tasks/:taskId/update/:updateId", updateTaskUpdate);
+
+router.post(
+  "/project/:id/tasks/:taskId/update/:updateId/ratings",
+  createTaskUpdateRating
+);
+
+router.patch(
+  "/project/:id/tasks/:taskId/update/:updateId/ratings/:ratingId",
+  updateTaskUpdateRating
+);
+
+router.get(
+  "/project/:id/tasks/:taskId/update/:updateId/ratings",
+  getTaskUpdateRatings
+);
 
 router.post(
   "/project/:id/tasks/:taskId/update/:updateId/comments",

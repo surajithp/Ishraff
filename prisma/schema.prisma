@@ -106,6 +106,7 @@ model ProjectMember {
   ProjectTask             ProjectTask[]
   ProjectMemberOnProjects ProjectMemberOnProjects[]
   isArchived              Boolean                   @default(false)
+  UpdateRatings           UpdateRatings[]
 }
 
 model ProjectMemberOnProjects {
@@ -119,28 +120,31 @@ model ProjectMemberOnProjects {
 }
 
 model ProjectTask {
-  id              String        @id @default(uuid())
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now())
-  name            String
-  description     String
-  memberId        String
-  assignedTo      ProjectMember @relation(fields: [memberId], references: [id])
-  belongsTo       Project       @relation(fields: [projectId], references: [id])
-  createdBy       User          @relation(fields: [userId], references: [id])
-  managedUserId   String
-  managedUserName String        @default("")
-  userId          String
-  status          TASK_STATUS
-  projectId       String
-  isCompleted     Boolean       @default(false)
-  isReopened      Boolean       @default(false)
-  isArchived      Boolean       @default(false)
-  startDate       String?
-  endDate         String?
-  startTime       String?
-  endTime         String?
-  TaskUpdate      TaskUpdate[]
+  id                String              @id @default(uuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now())
+  name              String
+  description       String
+  memberId          String
+  assignedTo        ProjectMember       @relation(fields: [memberId], references: [id])
+  belongsTo         Project             @relation(fields: [projectId], references: [id])
+  createdBy         User                @relation(fields: [userId], references: [id])
+  managedUserId     String
+  managedMemberId   String              @default("")
+  managedUserName   String              @default("")
+  userId            String
+  status            TASK_STATUS
+  projectId         String
+  isCompleted       Boolean             @default(false)
+  isReopened        Boolean             @default(false)
+  isArchived        Boolean             @default(false)
+  startDate         String?
+  endDate           String?
+  startTime         String?
+  endTime           String?
+  TaskUpdate        TaskUpdate[]
+  TaskModifications TaskModifications[]
+  UpdateRatings     UpdateRatings[]
 }
 
 model TaskUpdate {
@@ -156,7 +160,7 @@ model TaskUpdate {
   createdBy         User             @relation(fields: [userId], references: [id])
   userId            String
   attachmentType    String?
-  attachmentSize    BigInt?
+  attachmentSize    Int?
   attachmentFileKey String?
   attachmentName    String?
   rating            Float?
@@ -164,6 +168,18 @@ model TaskUpdate {
   latitude          Float?
   longitude         Float?
   UpdateComments    UpdateComments[]
+  UpdateRatings     UpdateRatings[]
+}
+
+model TaskModifications {
+  id               Int         @id @default(autoincrement())
+  createdAt        DateTime    @default(now())
+  taskId           String
+  task             ProjectTask @relation(fields: [taskId], references: [id])
+  oldMemberId      String?
+  newMemberId      String?
+  oldManagedUserId String?
+  newManagedUserId String?
 }
 
 model UpdateComments {
@@ -174,6 +190,18 @@ model UpdateComments {
   taskUpdateId  String
   belongsTo     TaskUpdate    @relation(fields: [taskUpdateId], references: [id])
   comment       String
+}
+
+model UpdateRatings {
+  id            Int           @id @default(autoincrement())
+  createdAt     DateTime      @default(now())
+  memberId      String
+  projectMember ProjectMember @relation(fields: [memberId], references: [id])
+  rating        Int
+  taskUpdateId  String
+  taskUpdate    TaskUpdate    @relation(fields: [taskUpdateId], references: [id])
+  taskId        String
+  task          ProjectTask   @relation(fields: [taskId], references: [id])
 }
 
 enum TASK_STATUS {

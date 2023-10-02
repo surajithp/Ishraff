@@ -191,20 +191,55 @@ export const updateProjectTask = async (req, res, next) => {
           req.user.id === taskDetails.managedUserId
         ) {
           const status = req.body.status;
+          const { memberId, managedMemberId, ...rest } = req.body;
           const data = {
-            ...req.body
+            ...rest
           };
           if (status === "completed") {
             data.iscompleted = true;
           }
-          if (status === "ARCHIVED") {
+          if (status === "archived") {
             data.isArchived = true;
           }
-          if (status === "REOPENED") {
+          if (status === "reopen") {
             if (taskDetails.status === "completed") {
               data.isReopened = true;
             } else {
               throw new Error("Cannot reopen a task which is not completed");
+            }
+          }
+          if (taskDetails.memberId !== memberId) {
+            data.memberId = memberId;
+            await prisma.taskModifications.create({
+              data: {
+                newMemberId: memberId,
+                oldMemberId: taskDetails.memberId,
+                taskId: taskDetails.id
+              }
+            });
+          }
+          if (managedMemberId) {
+            const managedMember = await prisma.projectMember.findFirst({
+              where: {
+                id: managedMemberId
+              },
+              include: {
+                user: true
+              }
+            });
+            if (
+              managedMember &&
+              managedMember.userId !== taskDetails.managedUserId
+            ) {
+              data.managedUserId = managedMember.userId;
+              data.managedUserName = managedMember.user.username;
+              await prisma.taskModifications.create({
+                data: {
+                  newManagedUserId: managedMember.userId,
+                  oldManagedUserId: taskDetails.managedUserId,
+                  taskId: taskDetails.id
+                }
+              });
             }
           }
           const task = await prisma.projectTask.update({
@@ -290,6 +325,40 @@ export const getProjectTask = async (req, res, next) => {
             errors: []
           });
         }
+      } else {
+        res.status(422);
+        res.send({ message: "Project does not have tasks" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProjectTaskModifications = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskModifications = await prisma.taskModifications.findMany({
+        where: {
+          taskId: taskId
+        }
+      });
+      if (taskModifications) {
+        res.json({
+          status: "success",
+          data: taskModifications,
+          errors: []
+        });
       } else {
         res.status(422);
         res.send({ message: "Project does not have tasks" });

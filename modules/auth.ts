@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 export const comparePasswords = (password, hash) => {
   return bcrypt.compare(password, hash);
@@ -24,7 +24,12 @@ export const protect = (req, res, next) => {
   const bearer = req.headers.authorization;
   if (!bearer) {
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 
@@ -32,7 +37,12 @@ export const protect = (req, res, next) => {
   if (!token) {
     console.log("here");
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 
@@ -40,7 +50,12 @@ export const protect = (req, res, next) => {
     jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
       if (err) {
         res.status(401);
-        res.send("Not authorized");
+        res.send({
+          data: {
+            status: "error",
+            code: "token-expired"
+          }
+        });
       } else {
         console.log("Token verifified successfully");
         if (decoded) {
@@ -52,7 +67,12 @@ export const protect = (req, res, next) => {
     });
   } catch (e) {
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 };

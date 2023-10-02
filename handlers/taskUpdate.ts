@@ -42,13 +42,14 @@ export const createTaskUpdate = async (req, res, next) => {
           );
           if (response) {
             const fileSize = parseInt(req.headers["content-length"]);
+            console.log("=obejctKey", objectKey);
             const attachment = await prisma.taskUpdate.create({
               data: {
                 projectId: projectId,
                 taskId: taskId,
                 description: req.body.description,
-                longitude: req.body.longitude,
-                latitude: req.body.latitude,
+                longitude: parseFloat(req.body.longitude),
+                latitude: parseFloat(req.body.latitude),
                 rating: null,
                 userId: req.user.id,
                 status: "in_review",
@@ -175,14 +176,38 @@ export const getTaskUpdates = async (req, res, next) => {
         id: taskId
       }
     });
+    const status = req.query.status;
     if (taskDetails) {
+      let whereParam: any = {
+        taskId: taskId
+      };
+      if (status) {
+        whereParam.status = status;
+      }
       const taskUpdates = await prisma.taskUpdate.findMany({
-        where: {
-          taskId: taskId
-        },
+        where: whereParam,
         include: {
           task: true,
           createdBy: true
+        }
+      });
+      const taskRatings = await prisma.updateRatings.findMany({
+        where: {
+          taskId: taskId
+        }
+      });
+      taskUpdates.forEach((update) => {
+        const updateRatings = taskRatings.filter(
+          (rating) => rating.taskUpdateId === update.id
+        );
+        let avgRating = 0;
+        updateRatings.forEach((rating) => {
+          avgRating = avgRating + rating.rating;
+        });
+        if (updateRatings.length > 0) {
+          update.rating = avgRating / updateRatings.length;
+        } else {
+          update.rating = 0;
         }
       });
       res.json({
@@ -207,10 +232,18 @@ export const getProjectUpdates = async (req, res, next) => {
         id: projectId
       }
     });
+    const status = req.params.status;
     if (projectDetails) {
+      let whereParam: any = {
+        projectId: projectId
+      };
+      if (status) {
+        whereParam.status = status;
+      }
       const projectUpdates = await prisma.taskUpdate.findMany({
-        where: {
-          projectId: projectId
+        where: whereParam,
+        orderBy: {
+          createdAt: "desc"
         },
         include: {
           task: true,
@@ -263,6 +296,162 @@ export const getTaskUpdateComments = async (req, res, next) => {
         res.json({
           status: "success",
           data: taskUpdateComments,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Task details does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createTaskUpdateRating = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskId = req.params.taskId;
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails) {
+        const updateId = req.params.updateId;
+        const memberPreviousRating = await prisma.updateRatings.findFirst({
+          where: {
+            taskUpdateId: updateId,
+            memberId: req.body.memberId
+          }
+        });
+        if (!memberPreviousRating) {
+          const updateRating = await prisma.updateRatings.create({
+            data: {
+              memberId: req.body.memberId,
+              rating: req.body.rating,
+              taskUpdateId: updateId,
+              taskId: taskDetails.id
+            }
+          });
+          res.json({
+            status: "success",
+            data: updateRating,
+            errors: []
+          });
+        } else {
+          res.status(422);
+          res.send({ message: "Project Member already rated the update" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Task details does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateTaskUpdateRating = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskId = req.params.taskId;
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails) {
+        const updateId = req.params.updateId;
+        const ratingId = req.params.ratingId;
+        const ratingDetails = await prisma.updateRatings.findFirst({
+          where: {
+            taskUpdateId: updateId,
+            id: ratingId
+          }
+        });
+        if (ratingDetails) {
+          if (ratingDetails.memberId === req.body.memberId) {
+            const updateRating = await prisma.updateRatings.update({
+              where: {
+                id: ratingId
+              },
+              data: {
+                rating: req.body.rating
+              }
+            });
+            res.json({
+              status: "success",
+              data: updateRating,
+              errors: []
+            });
+          } else {
+            res.status(422);
+            res.send({
+              message: "Rating cannot be updated by other project Member"
+            });
+          }
+        } else {
+          res.status(422);
+          res.send({ message: "Rating Details does not exist" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Task details does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTaskUpdateRatings = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskId = req.params.taskId;
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails) {
+        const updateId = req.params.updateId;
+        const updateRatings = await prisma.updateRatings.findMany({
+          where: {
+            taskUpdateId: updateId
+          }
+        });
+        res.json({
+          status: "success",
+          data: updateRatings,
           errors: []
         });
       } else {
