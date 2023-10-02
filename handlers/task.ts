@@ -191,7 +191,7 @@ export const updateProjectTask = async (req, res, next) => {
           req.user.id === taskDetails.managedUserId
         ) {
           const status = req.body.status;
-          const { memberId, managedMemberId, ...rest } = req.body;
+          let { memberId, managedMemberId, ...rest } = req.body;
           const data = {
             ...rest
           };
@@ -208,6 +208,15 @@ export const updateProjectTask = async (req, res, next) => {
               throw new Error("Cannot reopen a task which is not completed");
             }
           }
+          if (memberId === "self") {
+            const assignedMember = await prisma.projectMember.findFirst({
+              where: {
+                userId: req.user.id,
+                projectId: projectId
+              }
+            });
+            memberId = assignedMember.id;
+          }
           if (taskDetails.memberId !== memberId) {
             data.memberId = memberId;
             await prisma.taskModifications.create({
@@ -217,6 +226,9 @@ export const updateProjectTask = async (req, res, next) => {
                 taskId: taskDetails.id
               }
             });
+          }
+          if (managedMemberId === "self") {
+            managedMemberId = req.user.id;
           }
           if (managedMemberId) {
             const managedMember = await prisma.projectMember.findFirst({
