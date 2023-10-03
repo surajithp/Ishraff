@@ -485,12 +485,37 @@ export const getProjectMemberTasks = async (req, res, next) => {
     }
     if (projectMember) {
       const tasks = await prisma.projectTask.findMany({
-        where: whereParam
+        where: whereParam,
+        include: {
+          assignedTo: {
+            include: {
+              user: true
+            }
+          },
+          createdBy: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
       });
       if (tasks) {
+        const projectTasks = tasks.map((task) => {
+          return {
+            id: task.id,
+            projectId: task.projectId,
+            created_at: task.createdAt,
+            created_by: task.createdBy.username,
+            assigned_at: task.createdAt,
+            assigned_to: task.assignedTo.user.username,
+            managed_by: task.managedUserName,
+            status: task.status,
+            name: task.name,
+            due_by: task.endDate
+          };
+        });
         res.json({
           status: "success",
-          data: tasks,
+          data: projectTasks,
           errors: []
         });
       } else {

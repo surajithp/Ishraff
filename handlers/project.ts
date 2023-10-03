@@ -26,6 +26,7 @@ export const getProjects = async (req, res, next) => {
     if (status) {
       projects = projects.filter((item) => item.status === status);
     }
+    projects = projects.filter(project=>project.status !== "archived")
     res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
@@ -166,6 +167,45 @@ export const updateProject = async (req, res, next) => {
         res.status(422);
         res.send({ message: "Project type cannot be changed" });
       }
+    } else {
+      res.status(404);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const archiveProject = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+        const projectMember = await prisma.projectMember.findFirst({
+          where: {
+            userId: req.user.id
+          }
+        });
+        if (projectMember && projectMember.role === "admin") {
+          const project = await prisma.project.update({
+            where: {
+              id: projectId
+            },
+            data: {
+              status: "archived"
+            }
+          });
+          res.json({ status: "success", data: project, errors: [] });
+        } else {
+          res.status(422);
+          res.send({
+            message: "Only Project Admin can archive project details"
+          });
+        }
     } else {
       res.status(404);
       res.send({ message: "Project does not exist" });

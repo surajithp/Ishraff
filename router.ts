@@ -22,7 +22,8 @@ import {
   updateProjectInvitation,
   removeProjectInvitation,
   getProjectAttachments,
-  deleteProjectAttachment
+  deleteProjectAttachment,
+  archiveProject
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -121,6 +122,9 @@ router.patch(
 );
 
 router.get("/project/:id", getProject);
+
+router.post("/project/:id/archived", archiveProject);
+
 
 router.get("/projects", getProjects);
 
