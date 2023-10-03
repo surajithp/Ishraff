@@ -253,6 +253,26 @@ export const getProjectUpdates = async (req, res, next) => {
           createdBy: true
         }
       });
+      const allUpdatesRatings = await prisma.updateRatings.findMany({
+        include: {
+          taskUpdate: true
+        }
+      });
+      const projectRatings = allUpdatesRatings.filter(rating=>rating.taskUpdate.projectId === projectId)
+      projectUpdates.forEach((update) => {
+        const updateRatings = projectRatings.filter(
+          (rating) => rating.taskUpdateId === update.id
+        );
+        let avgRating = 0;
+        updateRatings.forEach((rating) => {
+          avgRating = avgRating + rating.rating;
+        });
+        if (updateRatings.length > 0) {
+          update.rating = avgRating / updateRatings.length;
+        } else {
+          update.rating = 0;
+        }
+      });
       res.json({
         status: "success",
         data: projectUpdates,
