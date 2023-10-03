@@ -48,7 +48,8 @@ import {
   updateTaskUpdate,
   getTaskUpdates,
   getTaskUpdateRatings,
-  updateTaskUpdateRating
+  updateTaskUpdateRating,
+  getUserTaskUpdateRatings
 } from "./handlers/taskUpdate";
 import multer from "multer";
 
@@ -248,6 +249,16 @@ router.patch(
 router.get(
   "/project/:id/tasks/:taskId/update/:updateId/ratings",
   getTaskUpdateRatings
+);
+
+router.get(
+  "/project/:id/tasks/:taskId/updates/ratings",
+  getUserTaskUpdateRatings
+);
+
+router.get(
+  "/project/:id/updates/ratings",
+  getUserTaskUpdateRatings
 );
 
 router.post(

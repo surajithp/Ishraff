@@ -469,3 +469,87 @@ export const getTaskUpdateRatings = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getUserTaskUpdateRatings = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      const taskId = req.params.taskId;
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails) {
+        const userProjectMemberDetails = await prisma.projectMember.findFirst({
+          where:{
+            projectId: projectId,
+            userId: req.user.id
+          }
+        })
+        const updateRatings = await prisma.updateRatings.findMany({
+          where: {
+            taskId: taskId,
+            memberId: userProjectMemberDetails.id
+          }
+        });
+        res.json({
+          status: "success",
+          data: updateRatings,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({ message: "Task details does not exist" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserProjectUpdateRatings = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+        const userProjectMemberDetails = await prisma.projectMember.findFirst({
+          where:{
+            projectId: projectId,
+            userId: req.user.id
+          }
+        })
+        const updateRatings = await prisma.updateRatings.findMany({
+          where: {
+            memberId: userProjectMemberDetails.id
+          },
+          include:{
+            taskUpdate: true
+          }
+        });
+        const projectUpdateRatings = updateRatings.filter(rating=>rating.taskUpdate.projectId === projectId)
+        res.json({
+          status: "success",
+          data: projectUpdateRatings,
+          errors: []
+        });
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
