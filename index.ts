@@ -34,7 +34,7 @@ app.use(
   })
 );
 
-CronJob.schedule("* */4 * * * *", function () {
+CronJob.schedule("0 */12 * * *", function () {
   updateAllTasks();
   updateAllProjects();
 });
