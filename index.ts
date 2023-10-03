@@ -3,6 +3,7 @@ import { createNewUser, resetPassword, signin } from "./handlers/user";
 // export { logger as LOGGER } from "./winston";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
+import bodyParser from "body-parser";
 import { userDataValidate } from "./validations/uservalidation";
 import { Prisma } from "@prisma/client";
 import * as dotenv from "dotenv";
@@ -14,17 +15,29 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
 const CronJob = require("node-cron");
 import { updateAllTasks } from "./handlers/task";
+import { updateAllProjects } from "./handlers/project";
 
 const port = 3000;
 
 dotenv.config();
 
-// app.use(express.static("static"));
+app.use(
+  bodyParser.json({
+    limit: "20mb"
+  })
+);
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: "20mb",
+    parameterLimit: 50000
+  })
+);
 
-// CronJob.schedule("* */12 * * * *", function () {
-//   getAllTasks();
-//   updateAllTasks();
-// });
+CronJob.schedule("* */4 * * * *", function () {
+  updateAllTasks();
+  updateAllProjects();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
