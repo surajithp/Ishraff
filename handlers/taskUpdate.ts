@@ -92,6 +92,18 @@ export const updateTaskUpdate = async (req, res, next) => {
         id: projectId
       }
     });
+    const status = req.body.status
+    let allowedStatuses = ['flagged', "approved", "unapproved"]
+    const data:any = {}
+    if(status){
+      data.status = status
+    }
+    if(status === "flagged"){
+      data.isFlagged = true
+    }
+    if(status === "unapproved"){
+      data.status = "in_review"
+    }
     if (projectDetails) {
       const taskId = req.params.taskId;
       const taskDetails = await prisma.projectTask.findFirst({
@@ -100,19 +112,22 @@ export const updateTaskUpdate = async (req, res, next) => {
         }
       });
       if (taskDetails) {
-        const attachment = await prisma.taskUpdate.update({
-          where: {
-            id: updateId
-          },
-          data: {
-            ...req.body
-          }
-        });
-        res.json({
-          status: "success",
-          data: attachment,
-          errors: []
-        });
+        if(allowedStatuses.includes(status)){
+          const attachment = await prisma.taskUpdate.update({
+            where: {
+              id: updateId
+            },
+            data: data
+          });
+          res.json({
+            status: "success",
+            data: attachment,
+            errors: []
+          });
+        }else{
+          res.status(422);
+          res.send({ message: "Status in not valid" });
+        }
       } else {
         res.status(422);
         res.send({ message: "Task details does not exist" });
