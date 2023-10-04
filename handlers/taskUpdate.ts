@@ -171,6 +171,7 @@ export const createTaskUpdateComment = async (req, res, next) => {
 export const getTaskUpdates = async (req, res, next) => {
   try {
     const taskId = req.params.taskId;
+    const projectId = req.params.id
     const taskDetails = await prisma.projectTask.findFirst({
       where: {
         id: taskId
@@ -199,7 +200,23 @@ export const getTaskUpdates = async (req, res, next) => {
           taskId: taskId
         }
       });
-      taskUpdates.forEach((update) => {
+      const userProjectMemberDetails = await prisma.projectMember.findFirst({
+        where:{
+          projectId: projectId,
+          userId: req.user.id
+        }
+      })
+      const userTaskRatings = await prisma.updateRatings.findMany({
+        where: {
+          taskId: taskId,
+          memberId: userProjectMemberDetails.id
+        }
+      });
+      taskUpdates.forEach((update:any) => {
+        const userRating = userTaskRatings.find(rating=>rating.taskUpdateId === update.id)
+        if(userRating){
+          update.user_rating = userRating.rating
+        }
         const updateRatings = taskRatings.filter(
           (rating) => rating.taskUpdateId === update.id
         );
@@ -243,6 +260,12 @@ export const getProjectUpdates = async (req, res, next) => {
       if (status) {
         whereParam.status = status;
       }
+      const userProjectMemberDetails = await prisma.projectMember.findFirst({
+        where:{
+          projectId: projectId,
+          userId: req.user.id
+        }
+      })
       const projectUpdates = await prisma.taskUpdate.findMany({
         where: whereParam,
         orderBy: {
@@ -258,8 +281,13 @@ export const getProjectUpdates = async (req, res, next) => {
           taskUpdate: true
         }
       });
+      const allUserRatings = allUpdatesRatings.filter(rating=>rating.memberId === userProjectMemberDetails.id)
       const projectRatings = allUpdatesRatings.filter(rating=>rating.taskUpdate.projectId === projectId)
-      projectUpdates.forEach((update) => {
+      projectUpdates.forEach((update:any) => {
+        const userRating = allUserRatings.find(rating=>rating.taskUpdateId === update.id)
+        if(userRating){
+          update.user_rating = userRating.rating
+        }
         const updateRatings = projectRatings.filter(
           (rating) => rating.taskUpdateId === update.id
         );
