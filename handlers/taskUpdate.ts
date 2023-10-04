@@ -215,7 +215,7 @@ export const getTaskUpdates = async (req, res, next) => {
       taskUpdates.forEach((update:any) => {
         const userRating = userTaskRatings.find(rating=>rating.taskUpdateId === update.id)
         if(userRating){
-          update.user_rating = userRating.rating
+          update.user_rating = userRating
         }
         const updateRatings = taskRatings.filter(
           (rating) => rating.taskUpdateId === update.id
@@ -286,7 +286,7 @@ export const getProjectUpdates = async (req, res, next) => {
       projectUpdates.forEach((update:any) => {
         const userRating = allUserRatings.find(rating=>rating.taskUpdateId === update.id)
         if(userRating){
-          update.user_rating = userRating.rating
+          update.user_rating = userRating
         }
         const updateRatings = projectRatings.filter(
           (rating) => rating.taskUpdateId === update.id
