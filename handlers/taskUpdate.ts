@@ -92,17 +92,19 @@ export const updateTaskUpdate = async (req, res, next) => {
         id: projectId
       }
     });
-    const status = req.body.status
-    let allowedStatuses = ['flagged', "approved", "unapproved"]
-    const data:any = {}
-    if(status){
-      data.status = status
+    const status = req.body.status;
+    let allowedStatuses = ["flagged", "approved", "unapproved"];
+    const data: any = {};
+
+    if (status === "flagged") {
+      data.isFlagged = true;
+    } else if (status === "unflagged") {
+      data.isFlagged = false;
+    } else {
+      data.status = status;
     }
-    if(status === "flagged"){
-      data.isFlagged = true
-    }
-    if(status === "unapproved"){
-      data.status = "in_review"
+    if (status === "unapproved") {
+      data.status = "in_review";
     }
     if (projectDetails) {
       const taskId = req.params.taskId;
@@ -112,7 +114,7 @@ export const updateTaskUpdate = async (req, res, next) => {
         }
       });
       if (taskDetails) {
-        if(allowedStatuses.includes(status)){
+        if (allowedStatuses.includes(status)) {
           const attachment = await prisma.taskUpdate.update({
             where: {
               id: updateId
@@ -124,7 +126,7 @@ export const updateTaskUpdate = async (req, res, next) => {
             data: attachment,
             errors: []
           });
-        }else{
+        } else {
           res.status(422);
           res.send({ message: "Status in not valid" });
         }
@@ -186,7 +188,7 @@ export const createTaskUpdateComment = async (req, res, next) => {
 export const getTaskUpdates = async (req, res, next) => {
   try {
     const taskId = req.params.taskId;
-    const projectId = req.params.id
+    const projectId = req.params.id;
     const taskDetails = await prisma.projectTask.findFirst({
       where: {
         id: taskId
@@ -216,21 +218,23 @@ export const getTaskUpdates = async (req, res, next) => {
         }
       });
       const userProjectMemberDetails = await prisma.projectMember.findFirst({
-        where:{
+        where: {
           projectId: projectId,
           userId: req.user.id
         }
-      })
+      });
       const userTaskRatings = await prisma.updateRatings.findMany({
         where: {
           taskId: taskId,
           memberId: userProjectMemberDetails.id
         }
       });
-      taskUpdates.forEach((update:any) => {
-        const userRating = userTaskRatings.find(rating=>rating.taskUpdateId === update.id)
-        if(userRating){
-          update.user_rating = userRating
+      taskUpdates.forEach((update: any) => {
+        const userRating = userTaskRatings.find(
+          (rating) => rating.taskUpdateId === update.id
+        );
+        if (userRating) {
+          update.user_rating = userRating;
         }
         const updateRatings = taskRatings.filter(
           (rating) => rating.taskUpdateId === update.id
@@ -276,11 +280,11 @@ export const getProjectUpdates = async (req, res, next) => {
         whereParam.status = status;
       }
       const userProjectMemberDetails = await prisma.projectMember.findFirst({
-        where:{
+        where: {
           projectId: projectId,
           userId: req.user.id
         }
-      })
+      });
       const projectUpdates = await prisma.taskUpdate.findMany({
         where: whereParam,
         orderBy: {
@@ -296,12 +300,18 @@ export const getProjectUpdates = async (req, res, next) => {
           taskUpdate: true
         }
       });
-      const allUserRatings = allUpdatesRatings.filter(rating=>rating.memberId === userProjectMemberDetails.id)
-      const projectRatings = allUpdatesRatings.filter(rating=>rating.taskUpdate.projectId === projectId)
-      projectUpdates.forEach((update:any) => {
-        const userRating = allUserRatings.find(rating=>rating.taskUpdateId === update.id)
-        if(userRating){
-          update.user_rating = userRating
+      const allUserRatings = allUpdatesRatings.filter(
+        (rating) => rating.memberId === userProjectMemberDetails.id
+      );
+      const projectRatings = allUpdatesRatings.filter(
+        (rating) => rating.taskUpdate.projectId === projectId
+      );
+      projectUpdates.forEach((update: any) => {
+        const userRating = allUserRatings.find(
+          (rating) => rating.taskUpdateId === update.id
+        );
+        if (userRating) {
+          update.user_rating = userRating;
         }
         const updateRatings = projectRatings.filter(
           (rating) => rating.taskUpdateId === update.id
@@ -550,11 +560,11 @@ export const getUserTaskUpdateRatings = async (req, res, next) => {
       });
       if (taskDetails) {
         const userProjectMemberDetails = await prisma.projectMember.findFirst({
-          where:{
+          where: {
             projectId: projectId,
             userId: req.user.id
           }
-        })
+        });
         const updateRatings = await prisma.updateRatings.findMany({
           where: {
             taskId: taskId,
@@ -588,26 +598,28 @@ export const getUserProjectUpdateRatings = async (req, res, next) => {
       }
     });
     if (projectDetails) {
-        const userProjectMemberDetails = await prisma.projectMember.findFirst({
-          where:{
-            projectId: projectId,
-            userId: req.user.id
-          }
-        })
-        const updateRatings = await prisma.updateRatings.findMany({
-          where: {
-            memberId: userProjectMemberDetails.id
-          },
-          include:{
-            taskUpdate: true
-          }
-        });
-        const projectUpdateRatings = updateRatings.filter(rating=>rating.taskUpdate.projectId === projectId)
-        res.json({
-          status: "success",
-          data: projectUpdateRatings,
-          errors: []
-        });
+      const userProjectMemberDetails = await prisma.projectMember.findFirst({
+        where: {
+          projectId: projectId,
+          userId: req.user.id
+        }
+      });
+      const updateRatings = await prisma.updateRatings.findMany({
+        where: {
+          memberId: userProjectMemberDetails.id
+        },
+        include: {
+          taskUpdate: true
+        }
+      });
+      const projectUpdateRatings = updateRatings.filter(
+        (rating) => rating.taskUpdate.projectId === projectId
+      );
+      res.json({
+        status: "success",
+        data: projectUpdateRatings,
+        errors: []
+      });
     } else {
       res.status(422);
       res.send({ message: "Project does not exist" });
