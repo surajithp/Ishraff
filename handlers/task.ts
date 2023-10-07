@@ -727,20 +727,34 @@ export const getProjectMemberTasks = async (req, res, next) => {
     let whereParam: any = {
       OR: [
         {
+          projectId: projectId,
           memberId: memberId
         },
-        { managedUserId: projectMember.userId },
-        { userId: projectMember.userId }
+        { 
+          projectId: projectId,
+          managedUserId: projectMember.userId 
+        },
+        { 
+          projectId: projectId,
+          userId: projectMember.userId 
+        }
       ]
     };
     if (status) {
       whereParam = {
         OR: [
           {
+            projectId: projectId,
             memberId: memberId
           },
-          { managedUserId: projectMember.userId },
-          { userId: projectMember.userId }
+          { 
+            projectId: projectId,
+            managedUserId: projectMember.userId 
+          },
+          { 
+            projectId: projectId,
+            userId: projectMember.userId 
+          }
         ],
         status: status
       };

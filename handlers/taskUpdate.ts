@@ -111,6 +111,9 @@ export const updateTaskUpdate = async (req, res, next) => {
           });
           if (status === "flagged") {
             data.isFlagged = !taskUpdate.isFlagged;
+            if(data.isFlagged){
+              data.status = "flagged"
+            }
           } else {
             data.status = status;
           }
