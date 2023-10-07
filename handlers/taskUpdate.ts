@@ -273,7 +273,7 @@ export const getProjectUpdates = async (req, res, next) => {
         id: projectId
       }
     });
-    const status = req.params.status;
+    const status = req.query.status;
     if (projectDetails) {
       let whereParam: any = {
         projectId: projectId

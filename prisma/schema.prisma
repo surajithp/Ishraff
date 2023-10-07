@@ -168,6 +168,7 @@ model TaskUpdate {
   id                String           @id @default(uuid())
   createdAt         DateTime         @default(now())
   submittedOn       DateTime?
+  approvedOn        DateTime?
   description       String
   projectId         String
   project           Project          @relation(fields: [projectId], references: [id])
