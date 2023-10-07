@@ -657,7 +657,8 @@ export const getProjectTasks = async (req, res, next) => {
     if (projectDetails) {
       const status = req.query.status;
       let whereParam: any = {
-        projectId: projectId
+        projectId: projectId,
+        isArchived: false
       };
       if (status) {
         whereParam = {
@@ -745,7 +746,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
       };
     }
     if (projectMember) {
-      const tasks = await prisma.projectTask.findMany({
+      let tasks = await prisma.projectTask.findMany({
         where: whereParam,
         include: {
           assignedTo: {
@@ -759,6 +760,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
           createdAt: "desc"
         }
       });
+      tasks = tasks.filter((task) => !task.isArchived);
       if (tasks) {
         const projectTasks = tasks.map((task) => {
           return {
@@ -804,19 +806,21 @@ export const updateAllTasks = async () => {
   // This arrangement can be altered based on how we want the date's format to appear.
   let currentDate = `${day}-${month}-${year}`;
   try {
-    await prisma.projectTask.updateMany({
-      where: {
-        startDate: null,
-        startTime: null
-      },
-      data: {
-        status: "in_progress"
-      }
-    });
+    // await prisma.projectTask.updateMany({
+    //   where: {
+    //     startDate: null,
+    //     startTime: null,
+    //     status: { notIn: ["archived", "completed", "overdue"] }
+    //   },
+    //   data: {
+    //     status: "in_progress"
+    //   }
+    // });
     await prisma.projectTask.updateMany({
       where: {
         startDate: { gte: currentDate },
-        startTime: { not: null }
+        startTime: { not: null },
+        status: { not: "archived" }
       },
       data: {
         status: "draft"
@@ -824,8 +828,23 @@ export const updateAllTasks = async () => {
     });
     await prisma.projectTask.updateMany({
       where: {
+        startDate: { lte: currentDate },
+        startTime: { not: null },
+        endDate: { gte: currentDate },
+        endTime: { not: null },
+        status: { in: ["draft"] }
+      },
+      data: {
+        status: "in_progress"
+      }
+    });
+    await prisma.projectTask.updateMany({
+      where: {
+        startDate: { lte: currentDate },
+        startTime: { not: null },
         endDate: { lte: currentDate },
-        endTime: { not: null }
+        endTime: { not: null },
+        status: { notIn: ["archived", "completed", "overdue"] }
       },
       data: {
         status: "overdue"

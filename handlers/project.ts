@@ -26,7 +26,7 @@ export const getProjects = async (req, res, next) => {
     if (status) {
       projects = projects.filter((item) => item.status === status);
     }
-    projects = projects.filter(project=>project.status !== "archived")
+    projects = projects.filter((project) => project.status !== "archived");
     res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);
@@ -64,7 +64,8 @@ export const getProject = async (req, res, next) => {
     if (project) {
       const projectTasks = await prisma.projectTask.findMany({
         where: {
-          projectId: project.id
+          projectId: project.id,
+          isArchived: false
         }
       });
       const totalTasks = projectTasks;
@@ -185,27 +186,27 @@ export const archiveProject = async (req, res, next) => {
       }
     });
     if (projectDetails) {
-        const projectMember = await prisma.projectMember.findFirst({
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          userId: req.user.id
+        }
+      });
+      if (projectMember && projectMember.role === "admin") {
+        const project = await prisma.project.update({
           where: {
-            userId: req.user.id
+            id: projectId
+          },
+          data: {
+            status: "archived"
           }
         });
-        if (projectMember && projectMember.role === "admin") {
-          const project = await prisma.project.update({
-            where: {
-              id: projectId
-            },
-            data: {
-              status: "archived"
-            }
-          });
-          res.json({ status: "success", data: project, errors: [] });
-        } else {
-          res.status(422);
-          res.send({
-            message: "Only Project Admin can archive project details"
-          });
-        }
+        res.json({ status: "success", data: project, errors: [] });
+      } else {
+        res.status(422);
+        res.send({
+          message: "Only Project Admin can archive project details"
+        });
+      }
     } else {
       res.status(404);
       res.send({ message: "Project does not exist" });
