@@ -95,17 +95,6 @@ export const updateTaskUpdate = async (req, res, next) => {
     const status = req.body.status;
     let allowedStatuses = ["flagged", "approved", "unapproved"];
     const data: any = {};
-
-    if (status === "flagged") {
-      data.isFlagged = true;
-    } else if (status === "unflagged") {
-      data.isFlagged = false;
-    } else {
-      data.status = status;
-    }
-    if (status === "unapproved") {
-      data.status = "in_review";
-    }
     if (projectDetails) {
       const taskId = req.params.taskId;
       const taskDetails = await prisma.projectTask.findFirst({
@@ -115,7 +104,20 @@ export const updateTaskUpdate = async (req, res, next) => {
       });
       if (taskDetails) {
         if (allowedStatuses.includes(status)) {
-          const attachment = await prisma.taskUpdate.update({
+          const taskUpdate = await prisma.taskUpdate.findFirst({
+            where:{
+              id: updateId
+            }
+          })
+          if (status === "flagged") {
+            data.isFlagged = !taskUpdate.isFlagged;
+          } else {
+            data.status = status;
+          }
+          if (status === "unapproved") {
+            data.status = "in_review";
+          }
+          const update = await prisma.taskUpdate.update({
             where: {
               id: updateId
             },
@@ -123,7 +125,7 @@ export const updateTaskUpdate = async (req, res, next) => {
           });
           res.json({
             status: "success",
-            data: attachment,
+            data: update,
             errors: []
           });
         } else {

@@ -31,7 +31,9 @@ import {
   getProjectMemberTasks,
   getProjectTask,
   getProjectTaskModifications,
-  updateProjectTask
+  updateProjectTask,
+  submitProjectTask,
+  approveProjectTask
 } from "./handlers/task";
 import {
   generateInvitationCode,
@@ -212,6 +214,11 @@ router.post(
 );
 
 router.patch("/project/:id/tasks/:taskId", updateProjectTask);
+
+router.patch("/project/:id/tasks/:taskId/submit", submitProjectTask);
+
+router.patch("/project/:id/tasks/:taskId/approve", approveProjectTask);
+
 
 router.get("/project/:id/tasks/:taskId", getProjectTask);
 

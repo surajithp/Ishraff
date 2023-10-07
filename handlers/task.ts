@@ -288,6 +288,156 @@ export const updateProjectTask = async (req, res, next) => {
   }
 };
 
+export const submitProjectTask =async (req, res, next) => {
+  const projectId = req.params.id;
+  const taskId = req.params.taskId;
+  const projectDetails = await prisma.project.findFirst({
+    where: {
+      id: projectId
+    }
+  });
+  const projectMemberDetails = await prisma.projectMember.findFirst({
+    where:{
+      userId: req.user.id,
+      projectId: projectId
+    }
+  })
+  if(projectDetails && projectMemberDetails){
+    const taskDetails = await prisma.projectTask.findFirst({
+      where:{
+        id: taskId
+      }
+    })
+    if(taskDetails.status === "in_progress"){
+      if(taskDetails.memberId === projectMemberDetails.id){
+        const task = await prisma.projectTask.update({
+          where: {
+            id: taskId
+          },
+          data: {
+            status : "in_review"
+          }
+        })
+        res.json({
+          status: "success",
+          data: task,
+          errors: []
+        });
+      }else{
+        res.status(422);
+        res.send({ message: "Member is not assigned to task" });
+      }
+    }else{
+      res.status(422);
+      res.send({ message: "Task cannot be submittted" });
+    }
+
+  }else {
+    res.status(422);
+    res.send({ message: "Project does not exist" });
+  }
+}
+
+export const approveProjectTask =async (req, res, next) => {
+  const projectId = req.params.id;
+  const taskId = req.params.taskId;
+  const projectDetails = await prisma.project.findFirst({
+    where: {
+      id: projectId
+    }
+  });
+  const projectMemberDetails = await prisma.projectMember.findFirst({
+    where:{
+      userId: req.user.id,
+      projectId: projectId
+    }
+  })
+  if(projectDetails && projectMemberDetails){
+    const taskDetails = await prisma.projectTask.findFirst({
+      where:{
+        id: taskId
+      }
+    })
+    if(taskDetails.status === "in_review"){
+      if(projectMemberDetails.role === 'admin' || taskDetails.managedUserId === projectMemberDetails.userId){
+        const task = await prisma.projectTask.update({
+          where: {
+            id: taskId
+          },
+          data: {
+            status : "completed"
+          }
+        })
+        res.json({
+          status: "success",
+          data: task,
+          errors: []
+        });
+      }else{
+        res.status(422);
+        res.send({ message: "User should be project admin or task manager to approve the task" });
+      }
+    }else{
+      res.status(422);
+      res.send({ message: "Task cannot be approved" });
+    }
+
+  }else {
+    res.status(422);
+    res.send({ message: "Project does not exist" });
+  }
+}
+
+export const reopenProjectTask =async (req, res, next) => {
+  const projectId = req.params.id;
+  const taskId = req.params.taskId;
+  const projectDetails = await prisma.project.findFirst({
+    where: {
+      id: projectId
+    }
+  });
+  const projectMemberDetails = await prisma.projectMember.findFirst({
+    where:{
+      userId: req.user.id,
+      projectId: projectId
+    }
+  })
+  if(projectDetails && projectMemberDetails){
+    const taskDetails = await prisma.projectTask.findFirst({
+      where:{
+        id: taskId
+      }
+    })
+    if(taskDetails.status === "completed"){
+      if(projectMemberDetails.role === 'admin' || taskDetails.managedUserId === projectMemberDetails.userId){
+        const task = await prisma.projectTask.update({
+          where: {
+            id: taskId
+          },
+          data: {
+            status : "in_progress"
+          }
+        })
+        res.json({
+          status: "success",
+          data: task,
+          errors: []
+        });
+      }else{
+        res.status(422);
+        res.send({ message: "User should be project admin or task manager to reopen the task" });
+      }
+    }else{
+      res.status(422);
+      res.send({ message: "Only completed tasks can be reopened" });
+    }
+
+  }else {
+    res.status(422);
+    res.send({ message: "Project does not exist" });
+  }
+}
+
 export const getProjectTask = async (req, res, next) => {
   try {
     const projectId = req.params.id;
