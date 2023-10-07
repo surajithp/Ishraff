@@ -78,6 +78,7 @@ export const createProjectTask = async (req, res, next) => {
                 memberId: assignedMember.id,
                 projectId: projectId,
                 managedUserId: managedUser.user.id,
+                managedMemberId: managedUser.id,
                 managedUserName: managedUser.user.username,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -560,6 +561,16 @@ export const getProjectTask = async (req, res, next) => {
           createdBy: true
         }
       });
+      let managedMemberId = task.managedMemberId;
+      if (!managedMemberId) {
+        const managedMember = await prisma.projectMember.findFirst({
+          where: {
+            projectId: projectId,
+            userId: req.user.id
+          }
+        });
+        managedMemberId = managedMember.id;
+      }
       const taskDetails = {
         id: task.id,
         projectId: task.projectId,
@@ -567,6 +578,8 @@ export const getProjectTask = async (req, res, next) => {
         created_by: task.createdBy.username,
         assigned_at: task.createdAt,
         assigned_to: task.assignedTo.user.username,
+        memberId: task.memberId,
+        managedMemberId: managedMemberId,
         managed_by: task.managedUserName,
         status: task.status,
         name: task.name,
@@ -756,6 +769,8 @@ export const getProjectMemberTasks = async (req, res, next) => {
             assigned_at: task.createdAt,
             assigned_to: task.assignedTo.user.username,
             managed_by: task.managedUserName,
+            memberId: task.memberId,
+            managedMemberId: task.managedMemberId,
             status: task.status,
             name: task.name,
             due_by: task.endDate
