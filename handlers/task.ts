@@ -715,7 +715,7 @@ export const getProjectTasks = async (req, res, next) => {
 
 export const getProjectMemberTasks = async (req, res, next) => {
   try {
-    const projectId = req.params.projectId;
+    const projectId = req.params.id;
     const memberId = req.params.memberId;
     const status = req.query.status;
     const projectMember = await prisma.projectMember.findFirst({

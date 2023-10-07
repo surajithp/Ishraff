@@ -649,7 +649,7 @@ export const changeProjectMemberRole = async (req, res, next) => {
 export const deleteProjectMember = async (req, res, next) => {
   try {
     const memberId = req.params.memberId;
-    const projectId = req.params.projectId;
+    const projectId = req.params.id;
     const userProjectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id
@@ -726,7 +726,7 @@ export const updateProjectMember = async (req, res, next) => {
   try {
     const changeRole = req.body.role;
     const memberId = req.params.memberId;
-    const projectId = req.params.projectId;
+    const projectId = req.params.id;
     const userProjectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id
