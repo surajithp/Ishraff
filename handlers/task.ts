@@ -727,15 +727,12 @@ export const getProjectMemberTasks = async (req, res, next) => {
     let whereParam: any = {
       OR: [
         {
-          projectId: projectId,
           memberId: memberId
         },
         { 
-          projectId: projectId,
           managedUserId: projectMember.userId 
         },
         { 
-          projectId: projectId,
           userId: projectMember.userId 
         }
       ]
@@ -744,15 +741,12 @@ export const getProjectMemberTasks = async (req, res, next) => {
       whereParam = {
         OR: [
           {
-            projectId: projectId,
             memberId: memberId
           },
           { 
-            projectId: projectId,
             managedUserId: projectMember.userId 
           },
           { 
-            projectId: projectId,
             userId: projectMember.userId 
           }
         ],
@@ -775,6 +769,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
         }
       });
       tasks = tasks.filter((task) => !task.isArchived);
+      tasks = tasks.filter(task=>task.projectId === projectId)
       if (tasks) {
         const projectTasks = tasks.map((task) => {
           return {
