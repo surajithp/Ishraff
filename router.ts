@@ -33,7 +33,9 @@ import {
   getProjectTaskModifications,
   updateProjectTask,
   submitProjectTask,
-  approveProjectTask
+  approveProjectTask,
+  reopenProjectTask,
+  archiveProjectTask
 } from "./handlers/task";
 import {
   generateInvitationCode,
@@ -128,7 +130,6 @@ router.get("/project/:id", getProject);
 
 router.post("/project/:id/archived", archiveProject);
 
-
 router.get("/projects", getProjects);
 
 router.post(
@@ -219,6 +220,9 @@ router.patch("/project/:id/tasks/:taskId/submit", submitProjectTask);
 
 router.patch("/project/:id/tasks/:taskId/approve", approveProjectTask);
 
+router.patch("/project/:id/tasks/:taskId/reopen", reopenProjectTask);
+
+router.patch("/project/:id/tasks/:taskId/archive", archiveProjectTask);
 
 router.get("/project/:id/tasks/:taskId", getProjectTask);
 
@@ -263,10 +267,7 @@ router.get(
   getUserTaskUpdateRatings
 );
 
-router.get(
-  "/project/:id/updates/ratings",
-  getUserTaskUpdateRatings
-);
+router.get("/project/:id/updates/ratings", getUserTaskUpdateRatings);
 
 router.post(
   "/project/:id/tasks/:taskId/update/:updateId/comments",

@@ -190,24 +190,10 @@ export const updateProjectTask = async (req, res, next) => {
           memberDetails.role === "admin" ||
           req.user.id === taskDetails.managedUserId
         ) {
-          const status = req.body.status;
           let { memberId, managedMemberId, ...rest } = req.body;
           const data = {
             ...rest
           };
-          if (status === "completed") {
-            data.iscompleted = true;
-          }
-          if (status === "archived") {
-            data.isArchived = true;
-          }
-          if (status === "reopen") {
-            if (taskDetails.status === "completed") {
-              data.isReopened = true;
-            } else {
-              throw new Error("Cannot reopen a task which is not completed");
-            }
-          }
           if (memberId === "self") {
             const assignedMember = await prisma.projectMember.findFirst({
               where: {
@@ -288,155 +274,267 @@ export const updateProjectTask = async (req, res, next) => {
   }
 };
 
-export const submitProjectTask =async (req, res, next) => {
-  const projectId = req.params.id;
-  const taskId = req.params.taskId;
-  const projectDetails = await prisma.project.findFirst({
-    where: {
-      id: projectId
-    }
-  });
-  const projectMemberDetails = await prisma.projectMember.findFirst({
-    where:{
-      userId: req.user.id,
-      projectId: projectId
-    }
-  })
-  if(projectDetails && projectMemberDetails){
-    const taskDetails = await prisma.projectTask.findFirst({
-      where:{
-        id: taskId
+export const submitProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
       }
-    })
-    if(taskDetails.status === "in_progress"){
-      if(taskDetails.memberId === projectMemberDetails.id){
+    });
+    const projectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id,
+        projectId: projectId
+      }
+    });
+    if (projectDetails && projectMemberDetails) {
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails.status === "in_progress") {
+        if (taskDetails.memberId === projectMemberDetails.id) {
+          const task = await prisma.projectTask.update({
+            where: {
+              id: taskId
+            },
+            data: {
+              status: "in_review",
+              submittedAt: new Date().toISOString()
+            }
+          });
+          res.json({
+            status: "success",
+            data: task,
+            errors: []
+          });
+        } else {
+          res.status(422);
+          res.send({ message: "Member is not assigned to task" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Task cannot be submittted" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const approveProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    const projectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id,
+        projectId: projectId
+      }
+    });
+    if (projectDetails && projectMemberDetails) {
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails.status === "in_review") {
+        if (
+          projectMemberDetails.role === "admin" ||
+          taskDetails.managedUserId === projectMemberDetails.userId
+        ) {
+          const task = await prisma.projectTask.update({
+            where: {
+              id: taskId
+            },
+            data: {
+              status: "completed",
+              completedAt: new Date().toISOString(),
+              isCompleted: true
+            }
+          });
+          res.json({
+            status: "success",
+            data: task,
+            errors: []
+          });
+        } else {
+          res.status(422);
+          res.send({
+            message:
+              "User should be project admin or task manager to approve the task"
+          });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Task cannot be approved" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const reopenProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    const projectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id,
+        projectId: projectId
+      }
+    });
+    if (projectDetails && projectMemberDetails) {
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (taskDetails.status === "completed") {
+        if (
+          projectMemberDetails.role === "admin" ||
+          taskDetails.managedUserId === projectMemberDetails.userId
+        ) {
+          const task = await prisma.projectTask.update({
+            where: {
+              id: taskId
+            },
+            data: {
+              status: "in_progress",
+              reopenedAt: new Date().toISOString(),
+              isCompleted: false
+            }
+          });
+          const taskTransition = await prisma.taskStatusTransitions.create({
+            data: {
+              status: "reopened",
+              taskId: taskId,
+              projectId: projectId,
+              userId: projectMemberDetails.userId
+            }
+          });
+          if (taskTransition) {
+            res.json({
+              status: "success",
+              data: task,
+              errors: []
+            });
+          } else {
+            res.status(422);
+            res.send({
+              message: "Capturing Task transition failed"
+            });
+          }
+        } else {
+          res.status(422);
+          res.send({
+            message:
+              "User should be project admin or task manager to reopen the task"
+          });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Only completed tasks can be reopened" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const archiveProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    const projectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id,
+        projectId: projectId
+      }
+    });
+    if (projectDetails && projectMemberDetails) {
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (
+        projectMemberDetails.role === "admin" ||
+        taskDetails.managedUserId === projectMemberDetails.userId
+      ) {
         const task = await prisma.projectTask.update({
           where: {
             id: taskId
           },
           data: {
-            status : "in_review"
+            status: "archived",
+            reopenedAt: new Date().toISOString(),
+            isArchived: true
           }
-        })
-        res.json({
-          status: "success",
-          data: task,
-          errors: []
         });
-      }else{
-        res.status(422);
-        res.send({ message: "Member is not assigned to task" });
-      }
-    }else{
-      res.status(422);
-      res.send({ message: "Task cannot be submittted" });
-    }
-
-  }else {
-    res.status(422);
-    res.send({ message: "Project does not exist" });
-  }
-}
-
-export const approveProjectTask =async (req, res, next) => {
-  const projectId = req.params.id;
-  const taskId = req.params.taskId;
-  const projectDetails = await prisma.project.findFirst({
-    where: {
-      id: projectId
-    }
-  });
-  const projectMemberDetails = await prisma.projectMember.findFirst({
-    where:{
-      userId: req.user.id,
-      projectId: projectId
-    }
-  })
-  if(projectDetails && projectMemberDetails){
-    const taskDetails = await prisma.projectTask.findFirst({
-      where:{
-        id: taskId
-      }
-    })
-    if(taskDetails.status === "in_review"){
-      if(projectMemberDetails.role === 'admin' || taskDetails.managedUserId === projectMemberDetails.userId){
-        const task = await prisma.projectTask.update({
-          where: {
-            id: taskId
-          },
+        const taskTransition = await prisma.taskStatusTransitions.create({
           data: {
-            status : "completed"
+            status: "archived",
+            taskId: taskId,
+            projectId: projectId,
+            userId: projectMemberDetails.userId
           }
-        })
-        res.json({
-          status: "success",
-          data: task,
-          errors: []
         });
-      }else{
+        if (taskTransition) {
+          res.json({
+            status: "success",
+            data: task,
+            errors: []
+          });
+        } else {
+          res.status(422);
+          res.send({
+            message: "Capturing Task transition failed"
+          });
+        }
+      } else {
         res.status(422);
-        res.send({ message: "User should be project admin or task manager to approve the task" });
-      }
-    }else{
-      res.status(422);
-      res.send({ message: "Task cannot be approved" });
-    }
-
-  }else {
-    res.status(422);
-    res.send({ message: "Project does not exist" });
-  }
-}
-
-export const reopenProjectTask =async (req, res, next) => {
-  const projectId = req.params.id;
-  const taskId = req.params.taskId;
-  const projectDetails = await prisma.project.findFirst({
-    where: {
-      id: projectId
-    }
-  });
-  const projectMemberDetails = await prisma.projectMember.findFirst({
-    where:{
-      userId: req.user.id,
-      projectId: projectId
-    }
-  })
-  if(projectDetails && projectMemberDetails){
-    const taskDetails = await prisma.projectTask.findFirst({
-      where:{
-        id: taskId
-      }
-    })
-    if(taskDetails.status === "completed"){
-      if(projectMemberDetails.role === 'admin' || taskDetails.managedUserId === projectMemberDetails.userId){
-        const task = await prisma.projectTask.update({
-          where: {
-            id: taskId
-          },
-          data: {
-            status : "in_progress"
-          }
-        })
-        res.json({
-          status: "success",
-          data: task,
-          errors: []
+        res.send({
+          message:
+            "User should be project admin or task manager to archive the task"
         });
-      }else{
-        res.status(422);
-        res.send({ message: "User should be project admin or task manager to reopen the task" });
       }
-    }else{
+    } else {
       res.status(422);
-      res.send({ message: "Only completed tasks can be reopened" });
+      res.send({ message: "Project does not exist" });
     }
-
-  }else {
-    res.status(422);
-    res.send({ message: "Project does not exist" });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
 export const getProjectTask = async (req, res, next) => {
   try {

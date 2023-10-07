@@ -105,10 +105,10 @@ export const updateTaskUpdate = async (req, res, next) => {
       if (taskDetails) {
         if (allowedStatuses.includes(status)) {
           const taskUpdate = await prisma.taskUpdate.findFirst({
-            where:{
+            where: {
               id: updateId
             }
-          })
+          });
           if (status === "flagged") {
             data.isFlagged = !taskUpdate.isFlagged;
           } else {
