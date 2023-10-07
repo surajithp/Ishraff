@@ -566,7 +566,7 @@ export const getProjectTask = async (req, res, next) => {
         const managedMember = await prisma.projectMember.findFirst({
           where: {
             projectId: projectId,
-            userId: req.user.id
+            userId: task.managedUserId
           }
         });
         managedMemberId = managedMember.id;
