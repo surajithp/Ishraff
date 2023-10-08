@@ -65,6 +65,61 @@ export const signin = async (req, res, next) => {
   }
 };
 
+export const signinWithOtp = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber: req.body.mobile }
+    });
+
+    if (!user) {
+      res.status(401);
+      res.send({ status: "failed", error: "Invalid mobile Number" });
+      return;
+    }
+
+    const digits = "0123456789";
+    let OTP = "";
+    for (let i = 0; i < 6; i++) {
+      OTP += digits[Math.floor(Math.random() * 10)];
+    }
+    if (OTP) {
+      const createdOtp = await prisma.mobileOtp.create({
+        data: {
+          userId: user.id,
+          otp: parseInt(OTP),
+          expiryTime: 600,
+          phone_number: user.phoneNumber
+        }
+      });
+      res.json({ createdOtp });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyOtp = async (req, res, next) => {
+  const mobile = req.body.mobile;
+  const otp = req.body.otp;
+  const otpRecord = await prisma.mobileOtp.findFirst({
+    where: {
+      phone_number: mobile,
+      otp: otp
+    }
+  });
+  if (otpRecord) {
+    const user = await prisma.user.findUnique({
+      where: { id: otpRecord.userId }
+    });
+    const token = createJWT(user);
+    const { password, ...rest } = user;
+    res.json({ user: rest, token });
+  } else {
+    res.status(422);
+    res.send({ message: "OTP is invalid" });
+  }
+};
+
 export const uploadProfileImage = async (req, res, next) => {
   try {
     if (req.file) {

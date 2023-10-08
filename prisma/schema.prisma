@@ -28,6 +28,7 @@ model User {
   TaskUpdate                  TaskUpdate[]
   ProjectTask                 ProjectTask[]
   TaskStatusTransitions       TaskStatusTransitions[]
+  MobileOtp                   MobileOtp[]
 }
 
 model PlatformInvitation {
@@ -168,6 +169,7 @@ model TaskUpdate {
   id                String           @id @default(uuid())
   createdAt         DateTime         @default(now())
   submittedOn       DateTime?
+  approvedOn        DateTime?
   description       String
   projectId         String
   project           Project          @relation(fields: [projectId], references: [id])
@@ -186,6 +188,17 @@ model TaskUpdate {
   longitude         Float?
   UpdateComments    UpdateComments[]
   UpdateRatings     UpdateRatings[]
+}
+
+model MobileOtp {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  phone_number String
+  otp          Int
+  expiryTime   Int
+  isExpired    Boolean  @default(false)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model TaskModifications {

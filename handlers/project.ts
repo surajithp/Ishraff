@@ -926,9 +926,9 @@ export const getProjectMembers = async (req, res) => {
       const createdTasks = projectTasks.filter(
         (task) => task.userId === member.userId
       );
-      const managedTasks = projectTasks.filter((task) => {
-        (task) => task.managedUserId === member.userId;
-      });
+      const managedTasks = projectTasks.filter(
+        (task) => task.managedUserId === member.userId
+      );
       const inProgressTasks = assignedTasks.filter(
         (task) => task.status === "in_progress"
       );

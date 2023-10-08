@@ -111,15 +111,19 @@ export const updateTaskUpdate = async (req, res, next) => {
           });
           if (status === "flagged") {
             data.isFlagged = !taskUpdate.isFlagged;
-            if(data.isFlagged){
-              data.status = "flagged"
+            if (data.isFlagged) {
+              data.status = "flagged";
             }
           } else {
             data.status = status;
+            if (status === "approved") {
+              data.approvedOn = new Date().toISOString();
+            }
           }
           if (status === "unapproved") {
             data.status = "in_review";
           }
+          console.log("===data", data);
           const update = await prisma.taskUpdate.update({
             where: {
               id: updateId

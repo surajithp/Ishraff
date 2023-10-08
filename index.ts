@@ -1,5 +1,11 @@
 import router from "./router";
-import { createNewUser, resetPassword, signin } from "./handlers/user";
+import {
+  createNewUser,
+  resetPassword,
+  signin,
+  signinWithOtp,
+  verifyOtp
+} from "./handlers/user";
 // export { logger as LOGGER } from "./winston";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
@@ -72,6 +78,21 @@ app.post(
   body("email").isEmail().withMessage("Email is not valid"),
   handleInputErrors,
   signin
+);
+
+app.post(
+  "/signinWithOtp",
+  body("mobile").notEmpty().withMessage("Mobile number should not be empty"),
+  handleInputErrors,
+  signinWithOtp
+);
+
+app.post(
+  "/verifyOtp",
+  body("otp").notEmpty().withMessage("Otp should not be empty"),
+  body("mobile").notEmpty().withMessage("Mobile should not be empty"),
+  handleInputErrors,
+  verifyOtp
 );
 
 app.post(
