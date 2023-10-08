@@ -81,7 +81,7 @@ app.post(
 );
 
 app.post(
-  "/signinWithOtp",
+  "/signin/phone_number",
   body("mobile").notEmpty().withMessage("Mobile number should not be empty"),
   handleInputErrors,
   signinWithOtp
@@ -90,7 +90,7 @@ app.post(
 app.post(
   "/verifyOtp",
   body("otp").notEmpty().withMessage("Otp should not be empty"),
-  body("mobile").notEmpty().withMessage("Mobile should not be empty"),
+  body("token").notEmpty().withMessage("Token should not be empty"),
   handleInputErrors,
   verifyOtp
 );

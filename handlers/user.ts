@@ -83,15 +83,16 @@ export const signinWithOtp = async (req, res, next) => {
       OTP += digits[Math.floor(Math.random() * 10)];
     }
     if (OTP) {
+      const token = await hashPassword(user.id);
       const createdOtp = await prisma.mobileOtp.create({
         data: {
           userId: user.id,
           otp: parseInt(OTP),
-          expiryTime: 600,
+          expiryTime: 300,
           phone_number: user.phoneNumber
         }
       });
-      res.json({ createdOtp });
+      res.json({ token: token, createdOtp });
     }
   } catch (error) {
     next(error);
@@ -99,21 +100,34 @@ export const signinWithOtp = async (req, res, next) => {
 };
 
 export const verifyOtp = async (req, res, next) => {
-  const mobile = req.body.mobile;
   const otp = req.body.otp;
   const otpRecord = await prisma.mobileOtp.findFirst({
     where: {
-      phone_number: mobile,
-      otp: otp
+      otp: otp,
+      isExpired: false
     }
   });
   if (otpRecord) {
-    const user = await prisma.user.findUnique({
-      where: { id: otpRecord.userId }
-    });
-    const token = createJWT(user);
-    const { password, ...rest } = user;
-    res.json({ user: rest, token });
+    const otpCreatedTime = new Date(otpRecord.createdAt).getTime()
+    const currentTime = new Date().getTime()
+    const timeDifferenceInSeconds = (currentTime - otpCreatedTime)/1000
+    if(timeDifferenceInSeconds < otpRecord.expiryTime){
+      const isValid = await comparePasswords(otpRecord.userId, req.body.token);
+      if(isValid){
+        const user = await prisma.user.findUnique({
+          where: { id: otpRecord.userId }
+        });
+        const token = createJWT(user);
+        const { password, ...rest } = user;
+        res.json({ user: rest, token });
+      }else{
+        res.status(422);
+        res.send({ message: "Token is invalid" });
+      }
+    }else{
+      res.status(422);
+      res.send({ message: "OTP is expired" });
+    }
   } else {
     res.status(422);
     res.send({ message: "OTP is invalid" });
