@@ -170,6 +170,8 @@ model TaskUpdate {
   createdAt         DateTime         @default(now())
   submittedOn       DateTime?
   approvedOn        DateTime?
+  approverId        String?
+  approvedBy        String?
   description       String
   projectId         String
   project           Project          @relation(fields: [projectId], references: [id])

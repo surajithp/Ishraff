@@ -117,13 +117,19 @@ export const updateTaskUpdate = async (req, res, next) => {
           } else {
             data.status = status;
             if (status === "approved") {
+              const user = await prisma.user.findFirst({
+                where: {
+                  id: req.user.id
+                }
+              });
               data.approvedOn = new Date().toISOString();
+              data.approverId = req.user.id;
+              data.approvedBy = user ? user.username : "";
             }
           }
           if (status === "unapproved") {
             data.status = "in_review";
           }
-          console.log("===data", data);
           const update = await prisma.taskUpdate.update({
             where: {
               id: updateId
