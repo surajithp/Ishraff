@@ -33,6 +33,7 @@ model User {
 
 model PlatformInvitation {
   id         String   @id @default(uuid())
+  displayId  Int      @default(autoincrement())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
   senderId   String
@@ -45,6 +46,7 @@ model PlatformInvitation {
 
 model Project {
   id                      String                    @id @default(uuid())
+  displayId               Int                       @default(autoincrement())
   createdAt               DateTime                  @default(now())
   name                    String
   type                    ProjectType               @default(self)
@@ -71,6 +73,7 @@ model Project {
 
 model ProjectAttachment {
   id                String   @id @default(uuid())
+  displayId         Int      @default(autoincrement())
   createdAt         DateTime @default(now())
   projectId         String
   project           Project  @relation(fields: [projectId], references: [id])
@@ -84,6 +87,7 @@ model ProjectAttachment {
 
 model ProjectInvitation {
   id        String                    @id @default(uuid())
+  displayId Int                       @default(autoincrement())
   createdAt DateTime                  @default(now())
   updatedAt DateTime                  @default(now())
   invitedBy User                      @relation("Invited User", fields: [userId], references: [id])
@@ -98,6 +102,7 @@ model ProjectInvitation {
 
 model ProjectMember {
   id                      String                    @id @default(uuid())
+  displayId               Int                       @default(autoincrement())
   createdAt               DateTime                  @default(now())
   role                    Role
   projectId               String
@@ -123,6 +128,7 @@ model ProjectMemberOnProjects {
 
 model ProjectTask {
   id                    String                  @id @default(uuid())
+  displayId             Int                     @default(autoincrement())
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @default(now())
   submittedAt           DateTime?
@@ -166,7 +172,9 @@ model TaskStatusTransitions {
 }
 
 model TaskUpdate {
-  id                String           @id @default(uuid())
+  id        String @id @default(uuid())
+  displayId Int    @default(autoincrement())
+
   createdAt         DateTime         @default(now())
   submittedOn       DateTime?
   approvedOn        DateTime?
@@ -225,7 +233,8 @@ model UpdateComments {
 }
 
 model UpdateRatings {
-  id            Int           @id @default(autoincrement())
+  id            String           @id @default(uuid())
+  displayId     Int           @default(autoincrement())
   createdAt     DateTime      @default(now())
   memberId      String
   projectMember ProjectMember @relation(fields: [memberId], references: [id])

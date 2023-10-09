@@ -473,7 +473,7 @@ export const updateTaskUpdateRating = async (req, res, next) => {
       });
       if (taskDetails) {
         const updateId = req.params.updateId;
-        const ratingId = parseInt(req.params.ratingId);
+        const ratingId = req.params.ratingId;
         const ratingDetails = await prisma.updateRatings.findFirst({
           where: {
             taskUpdateId: updateId,
