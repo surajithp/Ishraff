@@ -28,7 +28,6 @@ model User {
   TaskUpdate                  TaskUpdate[]
   ProjectTask                 ProjectTask[]
   TaskStatusTransitions       TaskStatusTransitions[]
-  MobileOtp                   MobileOtp[]
 }
 
 model PlatformInvitation {
@@ -208,7 +207,6 @@ model MobileOtp {
   expiryTime   Int
   isExpired    Boolean  @default(false)
   userId       String
-  user         User     @relation(fields: [userId], references: [id])
 }
 
 model TaskModifications {
@@ -233,7 +231,7 @@ model UpdateComments {
 }
 
 model UpdateRatings {
-  id            String           @id @default(uuid())
+  id            String        @id @default(uuid())
   displayId     Int           @default(autoincrement())
   createdAt     DateTime      @default(now())
   memberId      String

@@ -103,13 +103,13 @@ export const getProject = async (req, res, next) => {
 
 export const createProject = async (req, res, next) => {
   try {
-    console.log("=req", req.user);
     const project = await prisma.project.create({
       data: {
         name: req.body.name,
         type: req.body.type,
         latitude: req.body.latitude,
         longitude: req.body.longitude,
+        status: "in_progress",
         belongsToId: req.user.id
       }
     });
@@ -197,7 +197,7 @@ export const archiveProject = async (req, res, next) => {
             id: projectId
           },
           data: {
-            status: "archived"
+            status: "archived",
           }
         });
         res.json({ status: "success", data: project, errors: [] });
