@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "TaskUpdate" ADD COLUMN     "approvedOn" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

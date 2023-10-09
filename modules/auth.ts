@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 export const comparePasswords = (password, hash) => {
   return bcrypt.compare(password, hash);
@@ -12,39 +12,67 @@ export const hashPassword = (password) => {
 export const createJWT = (user) => {
   const token = jwt.sign(
     { id: user.id, email: user.email },
-    process.env.JWT_SECRET
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "10h"
+    }
   );
   return token;
 };
 
 export const protect = (req, res, next) => {
   const bearer = req.headers.authorization;
-  console.log("====bearer", bearer);
   if (!bearer) {
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 
   const [, token] = bearer.split(" ");
-  console.log("====token", token);
   if (!token) {
     console.log("here");
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
-    console.log(payload);
-    next();
-    return;
+    jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
+      if (err) {
+        res.status(401);
+        res.send({
+          data: {
+            status: "error",
+            code: "token-expired"
+          }
+        });
+      } else {
+        console.log("Token verifified successfully");
+        if (decoded) {
+          req.user = decoded;
+          console.log(decoded);
+          next();
+        }
+      }
+    });
   } catch (e) {
-    console.error(e);
     res.status(401);
-    res.send("Not authorized");
+    res.send({
+      data: {
+        status: "error",
+        code: "token-expired"
+      }
+    });
     return;
   }
 };

@@ -16,7 +16,7 @@ export const createPlatformInvitation = async (req, res) => {
       data: {
         senderId: req.user.id,
         receiverId: req.body.receiverId,
-        status: "not-accepted"
+        status: "not_accepted"
       }
     });
     res.json({ status: "success", data: invitation, errors: [] });
@@ -26,13 +26,58 @@ export const createPlatformInvitation = async (req, res) => {
   }
 };
 
+export const getUserProjectInvitations = async (req, res, next) => {
+  try {
+    const status = req.query.status;
+    const invitationType = req.query.invitation_type;
+    const receivedInvitations = await prisma.projectInvitation.findMany({
+      where: {
+        inviteeId: req.user.id
+      },
+      include: {
+        invitedBy: true,
+        invitee: true,
+        project: true
+      }
+    });
+    const sentInvitations = await prisma.projectInvitation.findMany({
+      where: {
+        userId: req.user.id
+      },
+      include: {
+        invitedBy: true,
+        invitee: true,
+        project: true
+      }
+    });
+    receivedInvitations.forEach((invitation: any) => {
+      invitation.invitationType = "received";
+    });
+    sentInvitations.forEach((invitation: any) => {
+      invitation.invitationType = "sent";
+    });
+    let invitations = [...receivedInvitations, ...sentInvitations];
+    if (status) {
+      invitations = invitations.filter((item) => item.status === status);
+    }
+    if (invitationType) {
+      invitations = invitations.filter(
+        (item: any) => item.invitationType === invitationType
+      );
+    }
+    res.json({ status: "success", data: invitations, errors: [] });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getUserPlatformInvitations = async (req, res) => {
   const invitations = await prisma.platformInvitation.findMany({
     where: {
       senderId: req.user.id
     },
     include: {
-      user: {
+      invitedBy: {
         select: {
           email: true,
           username: true,

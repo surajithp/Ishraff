@@ -1,7 +1,15 @@
 import router from "./router";
-import { createNewUser, signin } from "./handlers/user";
+import {
+  createNewUser,
+  resetPassword,
+  signin,
+  signinWithOtp,
+  verifyOtp
+} from "./handlers/user";
+// export { logger as LOGGER } from "./winston";
 import { handleInputErrors } from "./modules/middleware";
 import { body } from "express-validator";
+import bodyParser from "body-parser";
 import { userDataValidate } from "./validations/uservalidation";
 import { Prisma } from "@prisma/client";
 import * as dotenv from "dotenv";
@@ -11,16 +19,31 @@ const express = require("express");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
+const CronJob = require("node-cron");
+import { updateAllTasks } from "./handlers/task";
+import { updateAllProjects } from "./handlers/project";
 
 const port = 3000;
 
 dotenv.config();
 
-app.use(express.static("static"));
+app.use(
+  bodyParser.json({
+    limit: "20mb"
+  })
+);
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: "20mb",
+    parameterLimit: 50000
+  })
+);
 
-/**
- * app.[method]([route], [route handler])
- */
+CronJob.schedule("0 */12 * * *", function () {
+  updateAllTasks();
+  updateAllProjects();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,6 +72,7 @@ app.post(
   handleInputErrors,
   createNewUser
 );
+
 app.post(
   "/signin",
   body("email").isEmail().withMessage("Email is not valid"),
@@ -56,7 +80,41 @@ app.post(
   signin
 );
 
+app.post(
+  "/signin/phone_number",
+  body("mobile").notEmpty().withMessage("Mobile number should not be empty"),
+  handleInputErrors,
+  signinWithOtp
+);
+
+app.post(
+  "/verifyOtp",
+  body("otp").notEmpty().withMessage("Otp should not be empty"),
+  body("token").notEmpty().withMessage("Token should not be empty"),
+  handleInputErrors,
+  verifyOtp
+);
+
+app.post(
+  "/reset-password",
+  body("email").isEmail().withMessage("Email is not valid"),
+  body("password")
+    .isStrongPassword({
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minSymbols: 1,
+      minNumbers: 1
+    })
+    .withMessage(
+      "Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+  handleInputErrors,
+  resetPassword
+);
+
 app.use((err, req, res, next) => {
+  console.log("==err", err);
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case "P2002":
@@ -96,6 +154,16 @@ app.use((err, req, res, next) => {
         message: `Service is temporary unavailable`
       });
     }
+  } else if (err instanceof Prisma.PrismaClientValidationError) {
+    res.status(422);
+    res.send({
+      message: err.message
+    });
+  } else if (err) {
+    res.status(400);
+    res.send({
+      message: err.message
+    });
   } else {
     res.status(500);
     res.send({
