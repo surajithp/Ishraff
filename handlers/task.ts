@@ -581,6 +581,7 @@ export const getProjectTask = async (req, res, next) => {
         memberId: task.memberId,
         managedMemberId: managedMemberId,
         managed_by: task.managedUserName,
+        displayId: task.displayId,
         status: task.status,
         name: task.name,
         due_by: task.endDate
@@ -689,6 +690,7 @@ export const getProjectTasks = async (req, res, next) => {
           assigned_at: task.createdAt,
           assigned_to: task.assignedTo.user.username,
           managed_by: task.managedUserName,
+          displayId: task.displayId,
           status: task.status,
           name: task.name,
           due_by: task.endDate
@@ -729,11 +731,11 @@ export const getProjectMemberTasks = async (req, res, next) => {
         {
           memberId: memberId
         },
-        { 
-          managedUserId: projectMember.userId 
+        {
+          managedUserId: projectMember.userId
         },
-        { 
-          userId: projectMember.userId 
+        {
+          userId: projectMember.userId
         }
       ]
     };
@@ -743,11 +745,11 @@ export const getProjectMemberTasks = async (req, res, next) => {
           {
             memberId: memberId
           },
-          { 
-            managedUserId: projectMember.userId 
+          {
+            managedUserId: projectMember.userId
           },
-          { 
-            userId: projectMember.userId 
+          {
+            userId: projectMember.userId
           }
         ],
         status: status
@@ -769,7 +771,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
         }
       });
       tasks = tasks.filter((task) => !task.isArchived);
-      tasks = tasks.filter(task=>task.projectId === projectId)
+      tasks = tasks.filter((task) => task.projectId === projectId);
       if (tasks) {
         const projectTasks = tasks.map((task) => {
           return {
@@ -780,6 +782,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
             assigned_at: task.createdAt,
             assigned_to: task.assignedTo.user.username,
             managed_by: task.managedUserName,
+            displayId: task.displayId,
             memberId: task.memberId,
             managedMemberId: task.managedMemberId,
             status: task.status,

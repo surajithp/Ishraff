@@ -4,7 +4,8 @@ import {
   resetPassword,
   signin,
   signinWithOtp,
-  verifyOtp
+  verifyOtp,
+  verifyUser
 } from "./handlers/user";
 // export { logger as LOGGER } from "./winston";
 import { handleInputErrors } from "./modules/middleware";
@@ -71,6 +72,13 @@ app.post(
   body("email").isEmail().withMessage("Email is not valid"),
   handleInputErrors,
   createNewUser
+);
+
+app.post(
+  "/signup/verify",
+  body("token").notEmpty().withMessage("Token should not be empty"),
+  handleInputErrors,
+  verifyUser
 );
 
 app.post(

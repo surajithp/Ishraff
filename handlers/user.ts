@@ -12,16 +12,71 @@ import { createJWT, hashPassword, comparePasswords } from "../modules/auth";
 export const createNewUser = async (req, res, next) => {
   const hash = await hashPassword(req.body.password);
   try {
-    const senderId = req.query.referral_code;
-    const user = await prisma.user.create({
-      data: {
-        username: req.body.username,
-        email: req.body.email,
-        password: hash,
-        phoneNumber: req.body.phoneNumber
-      }
-    });
-    if (senderId) {
+    // const senderId = req.query.referral_code;
+    const data = {
+      username: req.body.username,
+      email: req.body.email,
+      password: hash,
+      phoneNumber: req.body.phoneNumber
+    }
+    console.log("===data",data)
+    // if (senderId) {
+    //   await prisma.platformInvitation.create({
+    //     data: {
+    //       senderId: senderId,
+    //       receiverId: user.id,
+    //       status: "accepted"
+    //     }
+    //   });
+    // }
+    const token = createJWT(data);
+    const digits = "0123456789";
+    let OTP = "";
+    for (let i = 0; i < 6; i++) {
+      OTP += digits[Math.floor(Math.random() * 10)];
+    }
+    if (OTP) {
+      const createdOtp = await prisma.mobileOtp.create({
+        data: {
+          userId: token,
+          otp: parseInt(OTP),
+          expiryTime: 300,
+          phone_number: data.phoneNumber
+        }
+      });
+      res.json({ token: token, data: data, createdOtp });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyUser = async (req, res, next) =>{
+  const token = req.body.token
+  const userData = req.body.data
+  const otp = req.body.otp
+  const otpRecord = await prisma.mobileOtp.findFirst({
+    where: {
+      otp: otp,
+      userId: token,
+      isExpired: false
+    }
+  });
+  if (otpRecord) {
+    const otpCreatedTime = new Date(otpRecord.createdAt).getTime()
+    const currentTime = new Date().getTime()
+    const timeDifferenceInSeconds = (currentTime - otpCreatedTime)/1000
+    if(timeDifferenceInSeconds < otpRecord.expiryTime){
+      const senderId = req.query.referral_code;
+      const user = await prisma.user.create({
+        data: {
+          username: userData.username,
+          email: userData.email,
+          password: userData.password,
+          phoneNumber: userData.phoneNumber
+        }
+      });
+      if (senderId) {
       await prisma.platformInvitation.create({
         data: {
           senderId: senderId,
@@ -30,13 +85,18 @@ export const createNewUser = async (req, res, next) => {
         }
       });
     }
-    const { password, ...rest } = user;
-    const token = createJWT(user);
-    res.json({ user: user, token: token });
-  } catch (error) {
-    next(error);
+      const token = createJWT(user);
+      const { password, ...rest } = user;
+      res.json({ user: rest, token });
+    }else{
+      res.status(422);
+      res.send({ message: "OTP is expired" });
+    }
+  } else {
+    res.status(422);
+    res.send({ message: "OTP is invalid" });
   }
-};
+}
 
 export const signin = async (req, res, next) => {
   try {
