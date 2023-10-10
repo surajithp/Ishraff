@@ -192,15 +192,49 @@ export const archiveProject = async (req, res, next) => {
         }
       });
       if (projectMember && projectMember.role === "admin") {
-        const project = await prisma.project.update({
-          where: {
-            id: projectId
-          },
-          data: {
-            status: "archived",
+        if (projectDetails.status === "archived") {
+          const date = new Date();
+
+          let day = date.getDate();
+          let month = date.getMonth() + 1;
+          let year = date.getFullYear();
+          let currentDate = `${day}-${month}-${year}`;
+          if (projectDetails.startDate && projectDetails.endDate) {
+            const project = await prisma.project.update({
+              where: {
+                id: projectId,
+                startDate: { not: null, gte: currentDate },
+                startTime: { not: null }
+              },
+              data: {
+                status: "draft"
+              }
+            });
+            res.json({ status: "success", data: project, errors: [] });
+          } else {
+            const project = await prisma.project.update({
+              where: {
+                id: projectId,
+                startDate: null,
+                startTime: null
+              },
+              data: {
+                status: "in_progress"
+              }
+            });
+            res.json({ status: "success", data: project, errors: [] });
           }
-        });
-        res.json({ status: "success", data: project, errors: [] });
+        } else {
+          const project = await prisma.project.update({
+            where: {
+              id: projectId
+            },
+            data: {
+              status: "archived"
+            }
+          });
+          res.json({ status: "success", data: project, errors: [] });
+        }
       } else {
         res.status(422);
         res.send({
@@ -1136,7 +1170,8 @@ export const updateAllProjects = async () => {
     await prisma.project.updateMany({
       where: {
         startDate: null,
-        startTime: null
+        startTime: null,
+        status: { not: "archived" }
       },
       data: {
         status: "in_progress"
@@ -1144,8 +1179,21 @@ export const updateAllProjects = async () => {
     });
     await prisma.project.updateMany({
       where: {
-        startDate: { gte: currentDate },
-        startTime: { not: null }
+        startDate: { not: null, gte: currentDate },
+        startTime: { not: null },
+        status: { not: "archived" }
+      },
+      data: {
+        status: "draft"
+      }
+    });
+    await prisma.project.updateMany({
+      where: {
+        startDate: { not: null, lte: currentDate },
+        startTime: { not: null },
+        endDate: { not: null, gte: currentDate },
+        endTime: { not: null },
+        status: { not: "archived" }
       },
       data: {
         status: "in_progress"
@@ -1153,8 +1201,9 @@ export const updateAllProjects = async () => {
     });
     await prisma.project.updateMany({
       where: {
-        endDate: { lte: currentDate },
-        endTime: { not: null }
+        endDate: { not: null, lte: currentDate },
+        endTime: { not: null },
+        status: { not: "archived" }
       },
       data: {
         status: "overdue"
