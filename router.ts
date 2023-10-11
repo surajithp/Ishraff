@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handleInputErrors } from "./modules/middleware";
-import { uploadProfileImage } from "./handlers/user";
+import { uploadProfileImage , updateUserProfile} from "./handlers/user";
 import {
   createProject,
   getProject,
@@ -75,6 +75,11 @@ router.get("/platform/invitations", getUserPlatformInvitations);
 router.get("/project/invitations", getUserProjectInvitations);
 
 router.post("/user/profile-image", upload.single("file"), uploadProfileImage);
+
+router.patch("/user/:userId", 
+body("name").notEmpty().withMessage("Name should not be empty"),
+updateUserProfile);
+
 
 router.post(
   "/project",

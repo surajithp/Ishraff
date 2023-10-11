@@ -25,8 +25,9 @@ export const getProjects = async (req, res, next) => {
     });
     if (status) {
       projects = projects.filter((item) => item.status === status);
+    }else{
+      projects = projects.filter((project) => project.status !== "archived");
     }
-    projects = projects.filter((project) => project.status !== "archived");
     res.json({ status: "success", data: projects, errors: [] });
   } catch (error) {
     console.log("=======error", error);

@@ -194,6 +194,39 @@ export const verifyOtp = async (req, res, next) => {
   }
 };
 
+export const updateUserProfile =async (req, res, next) => {
+  const userId = req.params.userId
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId
+      }
+    })
+    if(user){
+      const userName = req.body.name
+      console.log("============userName",userName)
+      const updatedUser = await prisma.user.update({
+        where:{
+          id: userId
+        },
+        data:{
+          username: userName
+        }
+      })
+      res.json({
+        status: "success",
+        data: updatedUser,
+        errors: []
+      });
+    }else{
+      res.status(422);
+      res.send({ message: "User not existed" });
+    }
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const uploadProfileImage = async (req, res, next) => {
   try {
     if (req.file) {
