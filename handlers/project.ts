@@ -1166,7 +1166,7 @@ export const updateAllProjects = async () => {
   let year = date.getFullYear();
 
   // This arrangement can be altered based on how we want the date's format to appear.
-  let currentDate = `${day}-${month}-${year}`;
+  let currentDate = new Date().toISOString();
   try {
     await prisma.project.updateMany({
       where: {
