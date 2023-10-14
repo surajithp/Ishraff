@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handleInputErrors } from "./modules/middleware";
-import { uploadProfileImage , updateUserProfile} from "./handlers/user";
+import { uploadProfileImage, updateUserProfile } from "./handlers/user";
 import {
   createProject,
   getProject,
@@ -55,6 +55,10 @@ import {
   updateTaskUpdateRating,
   getUserTaskUpdateRatings
 } from "./handlers/taskUpdate";
+import {
+  getUserNotifications,
+  deleteUserNotifications
+} from "./handlers/notifications";
 import multer from "multer";
 
 const storage = multer.memoryStorage();
@@ -76,10 +80,15 @@ router.get("/project/invitations", getUserProjectInvitations);
 
 router.post("/user/profile-image", upload.single("file"), uploadProfileImage);
 
-router.patch("/user/:userId", 
-body("name").notEmpty().withMessage("Name should not be empty"),
-updateUserProfile);
+router.patch(
+  "/user/:userId",
+  body("name").notEmpty().withMessage("Name should not be empty"),
+  updateUserProfile
+);
 
+router.get("/user/notifications", getUserNotifications);
+
+router.delete("/user/notifications", deleteUserNotifications);
 
 router.post(
   "/project",

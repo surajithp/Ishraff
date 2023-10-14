@@ -90,6 +90,20 @@ export const createProjectTask = async (req, res, next) => {
               }
             });
             if (task) {
+              await prisma.notifications.create({
+                data: {
+                  userId: assignedMember.userId,
+                  title: `${projectDetails.name} task creation`,
+                  description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
+                }
+              });
+              await prisma.notifications.create({
+                data: {
+                  userId: managedUser.userId,
+                  title: `${projectDetails.name} task creation`,
+                  description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
+                }
+              });
               res.json({
                 status: "success",
                 data: task,
