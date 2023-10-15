@@ -64,33 +64,48 @@ export const createTaskUpdate = async (req, res, next) => {
               data: attachment,
               errors: []
             });
-            const managedUser = await prisma.user.findFirst({
-              where:{
-                id: taskDetails.managedUserId
+            const projectGuests = await prisma.projectMember.findMany({
+              where: {
+                projectId: projectId,
+                role: "guest"
               }
-            })
+            });
+            const projectGuestsUserIds = projectGuests.map(
+              (guest) => guest.userId
+            );
             const assignedMember = await prisma.projectMember.findFirst({
-              where:{
+              where: {
+                projectId: projectId,
                 id: taskDetails.memberId
-              },
-              include:{
-                user: true
               }
-            })
-            await prisma.notifications.create({
-              data:{
-                userId: taskDetails.managedUserId,
-                title: `${projectDetails.name} update details`,
-                description: `An update has been added by ${managedUser.username} for the task - ${taskDetails.name}`
+            });
+            const userIds = [
+              ...projectGuestsUserIds,
+              assignedMember.userId,
+              taskDetails.managedUserId,
+              taskDetails.userId
+            ];
+            const user = await prisma.user.findFirst({
+              where: {
+                id: req.user.id
               }
-            })
-            await prisma.notifications.create({
-              data:{
-                userId: taskDetails.managedUserId,
-                title: `${projectDetails.name} update details`,
-                description: `An update has been added by ${assignedMember.user.username} for the task - ${taskDetails.name}`
-              }
-            })
+            });
+            let proms = [];
+            userIds.forEach((id) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: id,
+                    title: `${projectDetails.name} update details`,
+                    description: `An update has been added by ${user.username} for the task - ${taskDetails.name}`
+                  }
+                })
+              );
+            });
+            Promise.all(proms);
+          } else {
+            res.status(422);
+            res.send({ message: "Update attachment uploading failed" });
           }
         } else {
           res.status(422);
@@ -167,6 +182,71 @@ export const updateTaskUpdate = async (req, res, next) => {
             data: update,
             errors: []
           });
+          const projectGuests = await prisma.projectMember.findMany({
+            where: {
+              projectId: projectId,
+              role: "guest"
+            }
+          });
+          const projectMember = await prisma.projectMember.findFirst({
+            where: {
+              projectId: projectId,
+              id: taskDetails.memberId
+            }
+          });
+          const projectGuestsUserIds = projectGuests.map(
+            (guest) => guest.userId
+          );
+          const userIds = [
+            ...projectGuestsUserIds,
+            projectMember.userId,
+            taskDetails.managedUserId,
+            taskDetails.userId
+          ];
+          const user = await prisma.user.findFirst({
+            where: {
+              id: req.user.id
+            }
+          });
+          let proms = [];
+          if (status === "flagged") {
+            userIds.forEach((id) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: id,
+                    title: `Update Flagged`,
+                    description: `Update-${update.id} has been flagged by ${user.username} for the task - ${taskDetails.name}`
+                  }
+                })
+              );
+            });
+          } else if (status === "approved") {
+            userIds.forEach((id) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: id,
+                    title: `${projectDetails.name} update status change`,
+                    description: `Update-${update.id} has been approved by ${user.username} for the task - ${taskDetails.name}`
+                  }
+                })
+              );
+            });
+          } else {
+            userIds.forEach((id) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: id,
+                    title: `${projectDetails.name} update status change`,
+                    description: `Update-${update.id} has been ${status} by ${user.username} for the task - ${taskDetails.name}`
+                  }
+                })
+              );
+            });
+          }
+          await Promise.all(proms);
         } else {
           res.status(422);
           res.send({ message: "Status in not valid" });
@@ -214,29 +294,38 @@ export const createTaskUpdateComment = async (req, res, next) => {
           errors: []
         });
         const projectGuests = await prisma.projectMember.findMany({
-          where:{
+          where: {
             projectId: projectId,
             role: "guest"
           }
-        })
+        });
         const projectMember = await prisma.projectMember.findFirst({
-          where:{
+          where: {
             projectId: projectId,
             id: taskDetails.memberId
           }
-        })
-        const projectGuestsUserIds = projectGuests.map(guest=>guest.userId)
-        const userIds = [...projectGuestsUserIds, projectMember.userId, taskDetails.managedUserId, taskDetails.userId]
-        let proms = []
-        userIds.forEach(id=>{
-          proms.push(prisma.notifications.create({
-            data:{
-              userId: id,
-              title: `Comments on Task`,
-              description: `Comments have been added to update- ${updateId} for the task-${taskDetails.name} under project- ${projectDetails.name}. Please check`
-            }
-          }))
-        })
+        });
+        const projectGuestsUserIds = projectGuests.map((guest) => guest.userId);
+        const userIds = [
+          ...projectGuestsUserIds,
+          projectMember.userId,
+          taskDetails.managedUserId,
+          taskDetails.userId
+        ];
+        console.log("==userIds", userIds);
+        let proms = [];
+        userIds.forEach((id) => {
+          proms.push(
+            prisma.notifications.create({
+              data: {
+                userId: id,
+                title: `Comments on Task`,
+                description: `Comments have been added to update- ${updateId} for the task-${taskDetails.name} under project- ${projectDetails.name}. Please check`
+              }
+            })
+          );
+        });
+        await Promise.all(proms);
       } else {
         res.status(422);
         res.send({ message: "Task details does not exist" });

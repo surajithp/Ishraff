@@ -18,8 +18,8 @@ export const createNewUser = async (req, res, next) => {
       email: req.body.email,
       password: hash,
       phoneNumber: req.body.phoneNumber
-    }
-    console.log("===data",data)
+    };
+    console.log("===data", data);
     // if (senderId) {
     //   await prisma.platformInvitation.create({
     //     data: {
@@ -51,10 +51,10 @@ export const createNewUser = async (req, res, next) => {
   }
 };
 
-export const verifyUser = async (req, res, next) =>{
-  const token = req.body.token
-  const userData = req.body.data
-  const otp = req.body.otp
+export const verifyUser = async (req, res, next) => {
+  const token = req.body.token;
+  const userData = req.body.data;
+  const otp = req.body.otp;
   const otpRecord = await prisma.mobileOtp.findFirst({
     where: {
       otp: otp,
@@ -63,10 +63,10 @@ export const verifyUser = async (req, res, next) =>{
     }
   });
   if (otpRecord) {
-    const otpCreatedTime = new Date(otpRecord.createdAt).getTime()
-    const currentTime = new Date().getTime()
-    const timeDifferenceInSeconds = (currentTime - otpCreatedTime)/1000
-    if(timeDifferenceInSeconds < otpRecord.expiryTime){
+    const otpCreatedTime = new Date(otpRecord.createdAt).getTime();
+    const currentTime = new Date().getTime();
+    const timeDifferenceInSeconds = (currentTime - otpCreatedTime) / 1000;
+    if (timeDifferenceInSeconds < otpRecord.expiryTime) {
       const senderId = req.query.referral_code;
       const user = await prisma.user.create({
         data: {
@@ -77,18 +77,25 @@ export const verifyUser = async (req, res, next) =>{
         }
       });
       if (senderId) {
-      await prisma.platformInvitation.create({
-        data: {
-          senderId: senderId,
-          receiverId: user.id,
-          status: "accepted"
-        }
-      });
-    }
+        await prisma.platformInvitation.create({
+          data: {
+            senderId: senderId,
+            receiverId: user.id,
+            status: "accepted"
+          }
+        });
+        await prisma.notifications.create({
+          data: {
+            userId: senderId,
+            title: "Platform invitation accepted",
+            description: `${user.username} has joined the platform using your invite`
+          }
+        });
+      }
       const token = createJWT(user);
       const { password, ...rest } = user;
       res.json({ user: rest, token });
-    }else{
+    } else {
       res.status(422);
       res.send({ message: "OTP is expired" });
     }
@@ -96,7 +103,7 @@ export const verifyUser = async (req, res, next) =>{
     res.status(422);
     res.send({ message: "OTP is invalid" });
   }
-}
+};
 
 export const signin = async (req, res, next) => {
   try {
@@ -168,23 +175,23 @@ export const verifyOtp = async (req, res, next) => {
     }
   });
   if (otpRecord) {
-    const otpCreatedTime = new Date(otpRecord.createdAt).getTime()
-    const currentTime = new Date().getTime()
-    const timeDifferenceInSeconds = (currentTime - otpCreatedTime)/1000
-    if(timeDifferenceInSeconds < otpRecord.expiryTime){
+    const otpCreatedTime = new Date(otpRecord.createdAt).getTime();
+    const currentTime = new Date().getTime();
+    const timeDifferenceInSeconds = (currentTime - otpCreatedTime) / 1000;
+    if (timeDifferenceInSeconds < otpRecord.expiryTime) {
       const isValid = await comparePasswords(otpRecord.userId, req.body.token);
-      if(isValid){
+      if (isValid) {
         const user = await prisma.user.findUnique({
           where: { id: otpRecord.userId }
         });
         const token = createJWT(user);
         const { password, ...rest } = user;
         res.json({ user: rest, token });
-      }else{
+      } else {
         res.status(422);
         res.send({ message: "Token is invalid" });
       }
-    }else{
+    } else {
       res.status(422);
       res.send({ message: "OTP is expired" });
     }
@@ -194,38 +201,38 @@ export const verifyOtp = async (req, res, next) => {
   }
 };
 
-export const updateUserProfile =async (req, res, next) => {
-  const userId = req.params.userId
+export const updateUserProfile = async (req, res, next) => {
+  const userId = req.params.userId;
   try {
     const user = await prisma.user.findFirst({
       where: {
         id: userId
       }
-    })
-    if(user){
-      const userName = req.body.name
-      console.log("============userName",userName)
+    });
+    if (user) {
+      const userName = req.body.name;
+      console.log("============userName", userName);
       const updatedUser = await prisma.user.update({
-        where:{
+        where: {
           id: userId
         },
-        data:{
+        data: {
           username: userName
         }
-      })
+      });
       res.json({
         status: "success",
         data: updatedUser,
         errors: []
       });
-    }else{
+    } else {
       res.status(422);
       res.send({ message: "User not existed" });
     }
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 export const uploadProfileImage = async (req, res, next) => {
   try {
