@@ -25,7 +25,7 @@ export const getProjects = async (req, res, next) => {
     });
     if (status) {
       projects = projects.filter((item) => item.status === status);
-    }else{
+    } else {
       projects = projects.filter((project) => project.status !== "archived");
     }
     res.json({ status: "success", data: projects, errors: [] });
@@ -224,6 +224,24 @@ export const archiveProject = async (req, res, next) => {
               }
             });
             res.json({ status: "success", data: project, errors: [] });
+            const projectMembers = await prisma.projectMember.findMany({
+              where: {
+                projectId: projectId
+              }
+            });
+            const proms = [];
+            projectMembers.forEach((member) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: member.userId,
+                    title: `${projectDetails.name} status changed`,
+                    description: `${projectDetails.name} status has been changed to in progress`
+                  }
+                })
+              );
+            });
+            await Promise.all(proms);
           }
         } else {
           const project = await prisma.project.update({
@@ -235,6 +253,24 @@ export const archiveProject = async (req, res, next) => {
             }
           });
           res.json({ status: "success", data: project, errors: [] });
+          const projectMembers = await prisma.projectMember.findMany({
+            where: {
+              projectId: projectId
+            }
+          });
+          const proms = [];
+          projectMembers.forEach((member) => {
+            proms.push(
+              prisma.notifications.create({
+                data: {
+                  userId: member.userId,
+                  title: `${projectDetails.name} status changed`,
+                  description: `${projectDetails.name} status has been changed to archived`
+                }
+              })
+            );
+          });
+          await Promise.all(proms);
         }
       } else {
         res.status(422);
@@ -369,6 +405,9 @@ export const updateProjectInvitation = async (req, res) => {
                 role: invitationDetails.role,
                 userId: invitationDetails.inviteeId,
                 projectId: projectId
+              },
+              include: {
+                user: true
               }
             });
             if (member) {
@@ -376,6 +415,13 @@ export const updateProjectInvitation = async (req, res) => {
                 status: "success",
                 data: projectInvitation,
                 errors: []
+              });
+              await prisma.notifications.create({
+                data: {
+                  userId: invitationDetails.userId,
+                  title: `${projectDetails.name} invitation update`,
+                  description: `Project invitation sent to ${member.user.username} for the ${invitationDetails.role} has been accepted`
+                }
               });
             } else {
               res.status(422);
@@ -650,6 +696,9 @@ export const changeProjectMemberRole = async (req, res, next) => {
         where: {
           userId: req.user.id,
           projectId: projectId
+        },
+        include: {
+          user: true
         }
       });
       if (!user) {
@@ -668,6 +717,13 @@ export const changeProjectMemberRole = async (req, res, next) => {
           }
         });
         res.json({ status: "success", data: projectMember, errors: [] });
+        await prisma.notifications.create({
+          data: {
+            userId: projectMember.userId,
+            title: "Role Change",
+            description: `Your role has been changed to ${projectMember.role} by ${user.user.username}`
+          }
+        });
       } else {
         res.status(422);
         res.send({ message: "Project Member already have that role" });
@@ -999,6 +1055,9 @@ export const createProjectAttachment = async (req, res, next) => {
       const projectMember = await prisma.projectMember.findFirst({
         where: {
           userId: req.user.id
+        },
+        include: {
+          user: true
         }
       });
       if (projectMember) {
@@ -1049,6 +1108,26 @@ export const createProjectAttachment = async (req, res, next) => {
               data: attachment,
               errors: []
             });
+            const projectMembers = await prisma.projectMember.findMany({
+              where: {
+                projectId: projectId,
+                role: { in: ["admin", "manager"] }
+              }
+            });
+            console.log("======projectMembers", projectMembers);
+            const proms = [];
+            projectMembers.forEach((member) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: member.userId,
+                    title: `${projectDetails.name} attachment update`,
+                    description: `An update has been added by ${projectMember.user.username} under the project ${projectDetails.name}`
+                  }
+                })
+              );
+            });
+            await Promise.all(proms);
           }
         } else {
           res.status(422);

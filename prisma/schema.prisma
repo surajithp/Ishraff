@@ -28,6 +28,7 @@ model User {
   TaskUpdate                  TaskUpdate[]
   ProjectTask                 ProjectTask[]
   TaskStatusTransitions       TaskStatusTransitions[]
+  Notifications               Notifications[]
 }
 
 model PlatformInvitation {
@@ -241,6 +242,17 @@ model UpdateRatings {
   taskUpdate    TaskUpdate    @relation(fields: [taskUpdateId], references: [id])
   taskId        String
   task          ProjectTask   @relation(fields: [taskId], references: [id])
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  displayId Int      @default(autoincrement())
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  description   String
+  title     String
+  expired   Boolean  @default(false)
 }
 
 enum TASK_STATUS {

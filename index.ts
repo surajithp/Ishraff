@@ -13,7 +13,7 @@ import { body } from "express-validator";
 import bodyParser from "body-parser";
 import { userDataValidate } from "./validations/uservalidation";
 import { Prisma } from "@prisma/client";
-import webpush from "web-push"
+import webpush from "web-push";
 import path from "path";
 import * as dotenv from "dotenv";
 import cors from "cors";
@@ -31,7 +31,6 @@ const port = 3000;
 dotenv.config();
 
 // app.use(express.static(path.join(__dirname, "client")))
-
 
 app.use(
   bodyParser.json({
@@ -51,28 +50,33 @@ CronJob.schedule("0 */4 * * *", function () {
   updateAllProjects();
 });
 
-
-
-const publicVapidKey = "BGRrP8r_FW7hJ3XhB7VwMkGK66JMzhAmk5RAJvLvtNAdoSjzNesvkQSTsNG3vtnx9w7sN25Xc40fM0jDmvM6FNw";
+const publicVapidKey =
+  "BGRrP8r_FW7hJ3XhB7VwMkGK66JMzhAmk5RAJvLvtNAdoSjzNesvkQSTsNG3vtnx9w7sN25Xc40fM0jDmvM6FNw";
 
 const privateVapidKey = "yH2EDC-jYWc1Ay1TBEOkF6dEJysIOsCAwRJMvurh6Y4";
 
 // Setup the public and private VAPID keys to web-push library.
-webpush.setVapidDetails("mailto:surajith1991@gmail.com", publicVapidKey, privateVapidKey);
+webpush.setVapidDetails(
+  "mailto:surajith1991@gmail.com",
+  publicVapidKey,
+  privateVapidKey
+);
 
-app.post('/subscribe', (req, res)=>{
+app.post("/subscribe", (req, res) => {
   //get push subscription object
   const subscription = req.body;
 
   //send status 201
-  res.status(201).json({})
+  res.status(201).json({});
 
   //create paylod
-  const payload = JSON.stringify({title: 'Node Js Push Notification' });
+  const payload = JSON.stringify({ title: "Node Js Push Notification" });
 
   //pass the object into sendNotification
-  webpush.sendNotification(subscription, payload).catch(err=> console.error(err));
-})
+  webpush
+    .sendNotification(subscription, payload)
+    .catch((err) => console.error(err));
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
