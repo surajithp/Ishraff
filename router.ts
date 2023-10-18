@@ -20,6 +20,7 @@ import {
   deleteProjectMember,
   changeProjectMemberRole,
   updateProjectInvitation,
+  remindProjectInvitation,
   removeProjectInvitation,
   getProjectAttachments,
   deleteProjectAttachment,
@@ -152,6 +153,11 @@ router.post(
   body("role").notEmpty().withMessage("Role should not be empty"),
   handleInputErrors,
   createProjectInvitation
+);
+
+router.post(
+  "/project/:id/invitation/:invitationId/remind",
+  remindProjectInvitation
 );
 
 router.patch(
