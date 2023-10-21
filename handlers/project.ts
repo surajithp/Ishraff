@@ -301,6 +301,9 @@ export const createProjectInvitation = async (req, res) => {
         const projectMember = await prisma.projectMember.findFirst({
           where: {
             userId: req.user.id
+          },
+          include: {
+            user: true
           }
         });
         if (projectMember) {
@@ -351,6 +354,13 @@ export const createProjectInvitation = async (req, res) => {
                 status: "success",
                 data: projectInvitation,
                 errors: []
+              });
+              await prisma.notifications.create({
+                data: {
+                  userId: projectInvitation.inviteeId,
+                  title: `${projectDetails.name} invitation update`,
+                  description: `Project invitation received for ${projectInvitation.role} role by ${projectMember.user.username} in project ${projectDetails.name}, please check`
+                }
               });
             } else {
               res.status(422);
@@ -434,6 +444,59 @@ export const updateProjectInvitation = async (req, res) => {
               errors: []
             });
           }
+        } else {
+          res.status(422);
+          res.send({ message: "Project invitation does not exist" });
+        }
+      } else {
+        res.status(422);
+        res.send({ message: "Project does not allow adding members" });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    res.status(422);
+    res.send({ message: error });
+  }
+};
+
+export const remindProjectInvitation = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const invitationId = req.params.invitationId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    if (projectDetails) {
+      if (projectDetails.type === "team") {
+        const invitationDetails = await prisma.projectInvitation.findFirst({
+          where: {
+            id: invitationId,
+            projectId: projectId
+          }
+        });
+        if (invitationDetails) {
+          res.json({
+            status: "success",
+            data: invitationDetails,
+            errors: []
+          });
+          const user = await prisma.user.findFirst({
+            where: {
+              id: invitationDetails.userId
+            }
+          });
+          await prisma.notifications.create({
+            data: {
+              userId: invitationDetails.inviteeId,
+              title: `${projectDetails.name} invitation update`,
+              description: `Project invitation received for ${invitationDetails.role} role by ${user.username} in project ${projectDetails.name}, please check`
+            }
+          });
         } else {
           res.status(422);
           res.send({ message: "Project invitation does not exist" });
