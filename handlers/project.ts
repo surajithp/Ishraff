@@ -771,7 +771,7 @@ export const changeProjectMemberRole = async (req, res, next) => {
         throw new Error("Project Admin can only change role");
       }
       if (projectMember.role !== req.body.role) {
-        const projectMember = await prisma.projectMember.update({
+        const updatedProjectMember = await prisma.projectMember.update({
           where: {
             id: memberId
           },
@@ -779,12 +779,26 @@ export const changeProjectMemberRole = async (req, res, next) => {
             role: req.body.role
           }
         });
-        res.json({ status: "success", data: projectMember, errors: [] });
+        if (projectMember.role === "manager" && req.body.role === "worker") {
+          console.log("=====if", user);
+          await prisma.projectTask.updateMany({
+            where: {
+              projectId: projectId,
+              managedUserId: projectMember.userId
+            },
+            data: {
+              managedUserId: req.user.id,
+              managedMemberId: user.id,
+              managedUserName: user.user.username
+            }
+          });
+        }
+        res.json({ status: "success", data: updatedProjectMember, errors: [] });
         await prisma.notifications.create({
           data: {
-            userId: projectMember.userId,
+            userId: updatedProjectMember.userId,
             title: "Role Change",
-            description: `Your role has been changed to ${projectMember.role} by ${user.user.username}`
+            description: `Your role has been changed to ${updatedProjectMember.role} by ${user.user.username}`
           }
         });
       } else {
