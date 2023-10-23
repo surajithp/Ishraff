@@ -134,7 +134,7 @@ export const updateTaskUpdate = async (req, res, next) => {
       }
     });
     const status = req.body.status;
-    let allowedStatuses = ["flagged", "approved", "unapproved"];
+    let allowedStatuses = ["flagged", "approved"];
     const data: any = {};
     if (projectDetails) {
       const taskId = req.params.taskId;
@@ -168,9 +168,9 @@ export const updateTaskUpdate = async (req, res, next) => {
               data.approvedBy = user ? user.username : "";
             }
           }
-          if (status === "unapproved") {
-            data.status = "in_review";
-          }
+          // if (status === "unapproved") {
+          //   data.status = "in_review";
+          // }
           const update = await prisma.taskUpdate.update({
             where: {
               id: updateId
