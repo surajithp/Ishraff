@@ -33,6 +33,7 @@ import {
   getProjectTask,
   getProjectTaskModifications,
   updateProjectTask,
+  rejectProjectTask,
   submitProjectTask,
   approveProjectTask,
   reopenProjectTask,
@@ -243,6 +244,8 @@ router.patch("/project/:id/tasks/:taskId/approve", approveProjectTask);
 router.patch("/project/:id/tasks/:taskId/reopen", reopenProjectTask);
 
 router.patch("/project/:id/tasks/:taskId/archive", archiveProjectTask);
+
+router.patch("/project/:id/tasks/:taskId/reject", rejectProjectTask);
 
 router.get("/project/:id/tasks/:taskId", getProjectTask);
 

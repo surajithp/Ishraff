@@ -30,16 +30,12 @@ export const createNewUser = async (req, res, next) => {
     //   });
     // }
     const token = createJWT(data);
-    const digits = "0123456789";
-    let OTP = "";
-    for (let i = 0; i < 6; i++) {
-      OTP += digits[Math.floor(Math.random() * 10)];
-    }
+    let OTP = Math.floor(100000 + Math.random() * 900000);
     if (OTP) {
       const createdOtp = await prisma.mobileOtp.create({
         data: {
           userId: token,
-          otp: parseInt(OTP),
+          otp: OTP,
           expiryTime: 300,
           phone_number: data.phoneNumber
         }
@@ -107,10 +103,10 @@ export const verifyUser = async (req, res, next) => {
 
 export const signin = async (req, res, next) => {
   try {
+    const email = req.body.email;
     const user = await prisma.user.findUnique({
-      where: { email: req.body.email }
+      where: { email: email.toLowerCase() }
     });
-
     if (!user) {
       res.status(401);
       res.send({ status: "failed", error: "Invalid email" });

@@ -90,6 +90,18 @@ export const createProjectTask = async (req, res, next) => {
               }
             });
             if (task) {
+              let currentDate = new Date().toISOString();
+              await prisma.projectTask.update({
+                where: {
+                  id: task.id,
+                  startDate: { gte: currentDate },
+                  startTime: { not: null },
+                  status: { not: "archived" }
+                },
+                data: {
+                  status: "draft"
+                }
+              });
               await prisma.notifications.create({
                 data: {
                   userId: assignedMember.userId,
@@ -540,6 +552,60 @@ export const archiveProjectTask = async (req, res, next) => {
         res.send({
           message:
             "User should be project admin or task manager to archive the task"
+        });
+      }
+    } else {
+      res.status(422);
+      res.send({ message: "Project does not exist" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectProjectTask = async (req, res, next) => {
+  try {
+    const projectId = req.params.id;
+    const taskId = req.params.taskId;
+    const projectDetails = await prisma.project.findFirst({
+      where: {
+        id: projectId
+      }
+    });
+    const projectMemberDetails = await prisma.projectMember.findFirst({
+      where: {
+        userId: req.user.id,
+        projectId: projectId
+      }
+    });
+    if (projectDetails && projectMemberDetails) {
+      const taskDetails = await prisma.projectTask.findFirst({
+        where: {
+          id: taskId
+        }
+      });
+      if (
+        projectMemberDetails.role === "admin" ||
+        taskDetails.managedUserId === projectMemberDetails.userId
+      ) {
+        const task = await prisma.projectTask.update({
+          where: {
+            id: taskId
+          },
+          data: {
+            status: "in_progress"
+          }
+        });
+        res.json({
+          status: "success",
+          data: task,
+          errors: []
+        });
+      } else {
+        res.status(422);
+        res.send({
+          message:
+            "User should be project admin or task manager to reject the task"
         });
       }
     } else {
