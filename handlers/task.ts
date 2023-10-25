@@ -664,7 +664,8 @@ export const getProjectTask = async (req, res, next) => {
         displayId: task.displayId,
         status: task.status,
         name: task.name,
-        due_by: task.endDate
+        due_by: task.endDate,
+        end_time: task.endTime
       };
       if (taskDetails) {
         if (showDetails) {
@@ -761,7 +762,19 @@ export const getProjectTasks = async (req, res, next) => {
           createdAt: "desc"
         }
       });
-      const tasks = projectTasks.map((task) => {
+      const projectMember = await prisma.projectMember.findFirst({
+        where: {
+          userId: req.user.id,
+          projectId: projectId
+        }
+      });
+      const userTasks = projectTasks.filter((task) => {
+        return (
+          task.managedUserId === req.user.id ||
+          task.memberId === projectMember.id
+        );
+      });
+      const tasks = userTasks.map((task) => {
         return {
           id: task.id,
           projectId: task.projectId,
@@ -773,7 +786,8 @@ export const getProjectTasks = async (req, res, next) => {
           displayId: task.displayId,
           status: task.status,
           name: task.name,
-          due_by: task.endDate
+          due_by: task.endDate,
+          end_time: task.endTime
         };
       });
       if (tasks) {
@@ -867,7 +881,8 @@ export const getProjectMemberTasks = async (req, res, next) => {
             managedMemberId: task.managedMemberId,
             status: task.status,
             name: task.name,
-            due_by: task.endDate
+            due_by: task.endDate,
+            end_time: task.endTime
           };
         });
         res.json({
