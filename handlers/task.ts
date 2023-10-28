@@ -105,6 +105,7 @@ export const createProjectTask = async (req, res, next) => {
               await prisma.notifications.create({
                 data: {
                   userId: assignedMember.userId,
+                  type: "task",
                   title: `${projectDetails.name} task creation`,
                   description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
                 }
@@ -112,6 +113,7 @@ export const createProjectTask = async (req, res, next) => {
               await prisma.notifications.create({
                 data: {
                   userId: managedUser.userId,
+                  type: "task",
                   title: `${projectDetails.name} task creation`,
                   description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
                 }
@@ -391,6 +393,29 @@ export const approveProjectTask = async (req, res, next) => {
               isCompleted: true
             }
           });
+          const projectTasks = await prisma.projectTask.findMany({
+            where: {
+              projectId: projectId,
+              isArchived: false
+            }
+          });
+          const totalTasks = projectTasks;
+          const completedTasks = projectTasks.filter(
+            (task) => task.status === "completed"
+          );
+          if (
+            totalTasks.length > 1 &&
+            totalTasks.length === completedTasks.length
+          ) {
+            await prisma.project.update({
+              where: {
+                id: projectId
+              },
+              data: {
+                status: "completed"
+              }
+            });
+          }
           res.json({
             status: "success",
             data: task,

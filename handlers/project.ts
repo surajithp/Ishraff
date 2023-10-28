@@ -235,6 +235,7 @@ export const archiveProject = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: member.userId,
+                    type: "project",
                     title: `${projectDetails.name} status changed`,
                     description: `${projectDetails.name} status has been changed to in progress`
                   }
@@ -264,6 +265,7 @@ export const archiveProject = async (req, res, next) => {
               prisma.notifications.create({
                 data: {
                   userId: member.userId,
+                  type: "project",
                   title: `${projectDetails.name} status changed`,
                   description: `${projectDetails.name} status has been changed to archived`
                 }
@@ -358,6 +360,7 @@ export const createProjectInvitation = async (req, res) => {
               await prisma.notifications.create({
                 data: {
                   userId: projectInvitation.inviteeId,
+                  type: "project-invitation",
                   title: `${projectDetails.name} invitation update`,
                   description: `Project invitation received for ${projectInvitation.role} role by ${projectMember.user.username} in project ${projectDetails.name}, please check`
                 }
@@ -429,6 +432,7 @@ export const updateProjectInvitation = async (req, res) => {
               await prisma.notifications.create({
                 data: {
                   userId: invitationDetails.userId,
+                  type: "project-invitation",
                   title: `${projectDetails.name} invitation update`,
                   description: `Project invitation sent to ${member.user.username} for the ${invitationDetails.role} has been accepted`
                 }
@@ -493,6 +497,7 @@ export const remindProjectInvitation = async (req, res) => {
           await prisma.notifications.create({
             data: {
               userId: invitationDetails.inviteeId,
+              type: "project-invitation",
               title: `${projectDetails.name} invitation update`,
               description: `Project invitation received for ${invitationDetails.role} role by ${user.username} in project ${projectDetails.name}, please check`
             }
@@ -797,6 +802,7 @@ export const changeProjectMemberRole = async (req, res, next) => {
         await prisma.notifications.create({
           data: {
             userId: updatedProjectMember.userId,
+            type: "role",
             title: "Role Change",
             description: `Your role has been changed to ${updatedProjectMember.role} by ${user.user.username}`
           }
@@ -1198,6 +1204,7 @@ export const createProjectAttachment = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: member.userId,
+                    type: "task-update",
                     title: `${projectDetails.name} attachment update`,
                     description: `An update has been added by ${projectMember.user.username} under the project ${projectDetails.name}`
                   }

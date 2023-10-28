@@ -33,3 +33,32 @@ export const deleteUserNotifications = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteUserNotification = async (req, res, next) => {
+  try {
+    const notificationId = req.params.notificationId;
+    const notification = await prisma.notifications.delete({
+      where: {
+        id: notificationId
+      }
+    });
+    res.json({
+      status: "success",
+      data: notification,
+      errors: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteNotifications = async () => {
+  try {
+    let currentDate = new Date().toISOString();
+    await prisma.notifications.deleteMany({
+      where: {
+        createdAt: { not: null, lte: currentDate }
+      }
+    });
+  } catch (error) {}
+};
