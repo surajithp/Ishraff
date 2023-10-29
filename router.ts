@@ -59,7 +59,8 @@ import {
 } from "./handlers/taskUpdate";
 import {
   getUserNotifications,
-  deleteUserNotifications
+  deleteUserNotifications,
+  deleteUserNotification
 } from "./handlers/notifications";
 import multer from "multer";
 
@@ -91,6 +92,8 @@ router.patch(
 router.get("/user/notifications", getUserNotifications);
 
 router.delete("/user/notifications", deleteUserNotifications);
+
+router.delete("/user/notifications/:notificationId", deleteUserNotification);
 
 router.post(
   "/project",

@@ -25,6 +25,7 @@ const swaggerDocument = require("./swagger.json");
 const CronJob = require("node-cron");
 import { updateAllTasks } from "./handlers/task";
 import { updateAllProjects } from "./handlers/project";
+import { deleteNotifications } from "./handlers/notifications";
 
 const port = 3000;
 
@@ -48,6 +49,10 @@ app.use(
 CronJob.schedule("0 */4 * * *", function () {
   updateAllTasks();
   updateAllProjects();
+});
+
+CronJob.schedule("0 0 */3 * *", function () {
+  deleteNotifications();
 });
 
 const publicVapidKey =

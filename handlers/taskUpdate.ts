@@ -96,6 +96,7 @@ export const createTaskUpdate = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: id,
+                    type: "task-update",
                     title: `${projectDetails.name} update details`,
                     description: `An update has been added by ${user.username} for the task - ${taskDetails.name}`
                   }
@@ -215,8 +216,9 @@ export const updateTaskUpdate = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: id,
+                    type: "task-update",
                     title: `Update Flagged`,
-                    description: `Update-${update.id} has been flagged by ${user.username} for the task - ${taskDetails.name}`
+                    description: `Update-${update.displayId} has been flagged by ${user.username} for the task - ${taskDetails.name}`
                   }
                 })
               );
@@ -227,8 +229,9 @@ export const updateTaskUpdate = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: id,
+                    type: "task-update",
                     title: `${projectDetails.name} update status change`,
-                    description: `Update-${update.id} has been approved by ${user.username} for the task - ${taskDetails.name}`
+                    description: `Update-${update.displayId} has been approved by ${user.username} for the task - ${taskDetails.name}`
                   }
                 })
               );
@@ -239,8 +242,9 @@ export const updateTaskUpdate = async (req, res, next) => {
                 prisma.notifications.create({
                   data: {
                     userId: id,
+                    type: "task-update",
                     title: `${projectDetails.name} update status change`,
-                    description: `Update-${update.id} has been ${status} by ${user.username} for the task - ${taskDetails.name}`
+                    description: `Update-${update.displayId} has been ${status} by ${user.username} for the task - ${taskDetails.name}`
                   }
                 })
               );
@@ -319,6 +323,7 @@ export const createTaskUpdateComment = async (req, res, next) => {
             prisma.notifications.create({
               data: {
                 userId: id,
+                type: "task-update",
                 title: `Comments on Task`,
                 description: `Comments have been added to update- ${updateId} for the task-${taskDetails.name} under project- ${projectDetails.name}. Please check`
               }

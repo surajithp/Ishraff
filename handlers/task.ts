@@ -105,6 +105,7 @@ export const createProjectTask = async (req, res, next) => {
               await prisma.notifications.create({
                 data: {
                   userId: assignedMember.userId,
+                  type: "task",
                   title: `${projectDetails.name} task creation`,
                   description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
                 }
@@ -112,6 +113,7 @@ export const createProjectTask = async (req, res, next) => {
               await prisma.notifications.create({
                 data: {
                   userId: managedUser.userId,
+                  type: "task",
                   title: `${projectDetails.name} task creation`,
                   description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
                 }
@@ -376,7 +378,10 @@ export const approveProjectTask = async (req, res, next) => {
           id: taskId
         }
       });
-      if (taskDetails.status === "in_review") {
+      if (
+        taskDetails.status === "in_review" ||
+        taskDetails.status === "overdue"
+      ) {
         if (
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
@@ -386,11 +391,35 @@ export const approveProjectTask = async (req, res, next) => {
               id: taskId
             },
             data: {
-              status: "completed",
+              status:
+                taskDetails.status === "overdue" ? "delayed" : "completed",
               completedAt: new Date().toISOString(),
               isCompleted: true
             }
           });
+          const projectTasks = await prisma.projectTask.findMany({
+            where: {
+              projectId: projectId,
+              isArchived: false
+            }
+          });
+          const totalTasks = projectTasks;
+          const completedTasks = projectTasks.filter(
+            (task) => task.status === "completed" || task.status === "delayed"
+          );
+          if (
+            totalTasks.length > 1 &&
+            totalTasks.length === completedTasks.length
+          ) {
+            await prisma.project.update({
+              where: {
+                id: projectId
+              },
+              data: {
+                status: "completed"
+              }
+            });
+          }
           res.json({
             status: "success",
             data: task,
@@ -567,6 +596,7 @@ export const rejectProjectTask = async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const taskId = req.params.taskId;
+    let currentDate = new Date().toISOString();
     const projectDetails = await prisma.project.findFirst({
       where: {
         id: projectId
@@ -594,6 +624,17 @@ export const rejectProjectTask = async (req, res, next) => {
           },
           data: {
             status: "in_progress"
+          }
+        });
+        await prisma.projectTask.update({
+          where: {
+            id: taskId,
+            endDate: { not: null, lte: currentDate },
+            endTime: { not: null },
+            status: { not: "archived" }
+          },
+          data: {
+            status: "overdue"
           }
         });
         res.json({
@@ -730,6 +771,7 @@ export const getProjectTaskModifications = async (req, res, next) => {
 
 export const getProjectTasks = async (req, res, next) => {
   try {
+    const createdBy = req.query.created_by;
     const projectId = req.params.id;
     const projectDetails = await prisma.project.findFirst({
       where: {
@@ -768,12 +810,17 @@ export const getProjectTasks = async (req, res, next) => {
           projectId: projectId
         }
       });
-      const userTasks = projectTasks.filter((task) => {
+      let userTasks = projectTasks.filter((task) => {
         return (
           task.managedUserId === req.user.id ||
           task.memberId === projectMember.id
         );
       });
+      if (createdBy) {
+        userTasks = projectTasks.filter((task) => {
+          return task.userId === req.user.id;
+        });
+      }
       const tasks = userTasks.map((task) => {
         return {
           id: task.id,

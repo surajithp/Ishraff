@@ -25,10 +25,8 @@ export const protect = (req, res, next) => {
   if (!bearer) {
     res.status(401);
     res.send({
-      data: {
-        status: "error",
-        code: "token-expired"
-      }
+      status: "error",
+      code: "token-expired"
     });
     return;
   }
@@ -38,10 +36,8 @@ export const protect = (req, res, next) => {
     console.log("here");
     res.status(401);
     res.send({
-      data: {
-        status: "error",
-        code: "token-expired"
-      }
+      status: "error",
+      code: "token-expired"
     });
     return;
   }
@@ -51,10 +47,8 @@ export const protect = (req, res, next) => {
       if (err) {
         res.status(401);
         res.send({
-          data: {
-            status: "error",
-            code: "token-expired"
-          }
+          status: "error",
+          code: "token-expired"
         });
       } else {
         console.log("Token verifified successfully");
@@ -68,10 +62,8 @@ export const protect = (req, res, next) => {
   } catch (e) {
     res.status(401);
     res.send({
-      data: {
-        status: "error",
-        code: "token-expired"
-      }
+      status: "error",
+      code: "token-expired"
     });
     return;
   }
