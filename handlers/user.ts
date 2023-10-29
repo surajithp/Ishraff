@@ -83,7 +83,7 @@ export const verifyUser = async (req, res, next) => {
         await prisma.notifications.create({
           data: {
             userId: senderId,
-            type: "platform-invitation",
+            type: "platform",
             title: "Platform invitation accepted",
             description: `${user.username} has joined the platform using your invite`
           }

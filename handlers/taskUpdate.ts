@@ -323,7 +323,7 @@ export const createTaskUpdateComment = async (req, res, next) => {
             prisma.notifications.create({
               data: {
                 userId: id,
-                type: "task",
+                type: "task-update",
                 title: `Comments on Task`,
                 description: `Comments have been added to update- ${updateId} for the task-${taskDetails.name} under project- ${projectDetails.name}. Please check`
               }
