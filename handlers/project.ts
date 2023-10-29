@@ -10,6 +10,7 @@ import { slugifyString } from "../modules/utils";
 export const getProjects = async (req, res, next) => {
   try {
     const createdBy = req.query.created_by;
+    const assignedTo = req.query.assigned_to;
     let projects = [];
     const status = req.query.status;
     let projectMembers = await prisma.projectMember.findMany({
@@ -24,6 +25,11 @@ export const getProjects = async (req, res, next) => {
     if (createdBy) {
       projectMembers = projectMembers.filter(
         (member) => member.role === "admin"
+      );
+    }
+    if (assignedTo) {
+      projectMembers = projectMembers.filter(
+        (member) => member.role !== "admin"
       );
     }
     projectMembers.forEach((member) => {
@@ -77,7 +83,7 @@ export const getProject = async (req, res, next) => {
       });
       const totalTasks = projectTasks;
       const completedTasks = projectTasks.filter(
-        (task) => task.status === "completed"
+        (task) => task.status === "completed" || task.status === "delayed"
       );
       const data: any = {
         ...project,

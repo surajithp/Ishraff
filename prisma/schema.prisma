@@ -261,6 +261,7 @@ enum TASK_STATUS {
   in_progress
   in_review
   completed
+  delayed
   archived
   overdue
 }

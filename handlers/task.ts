@@ -378,7 +378,10 @@ export const approveProjectTask = async (req, res, next) => {
           id: taskId
         }
       });
-      if (taskDetails.status === "in_review") {
+      if (
+        taskDetails.status === "in_review" ||
+        taskDetails.status === "overdue"
+      ) {
         if (
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
@@ -388,7 +391,8 @@ export const approveProjectTask = async (req, res, next) => {
               id: taskId
             },
             data: {
-              status: "completed",
+              status:
+                taskDetails.status === "overdue" ? "delayed" : "completed",
               completedAt: new Date().toISOString(),
               isCompleted: true
             }
@@ -401,7 +405,7 @@ export const approveProjectTask = async (req, res, next) => {
           });
           const totalTasks = projectTasks;
           const completedTasks = projectTasks.filter(
-            (task) => task.status === "completed"
+            (task) => task.status === "completed" || task.status === "delayed"
           );
           if (
             totalTasks.length > 1 &&
@@ -592,6 +596,7 @@ export const rejectProjectTask = async (req, res, next) => {
   try {
     const projectId = req.params.id;
     const taskId = req.params.taskId;
+    let currentDate = new Date().toISOString();
     const projectDetails = await prisma.project.findFirst({
       where: {
         id: projectId
@@ -619,6 +624,17 @@ export const rejectProjectTask = async (req, res, next) => {
           },
           data: {
             status: "in_progress"
+          }
+        });
+        await prisma.projectTask.update({
+          where: {
+            id: taskId,
+            endDate: { not: null, lte: currentDate },
+            endTime: { not: null },
+            status: { not: "archived" }
+          },
+          data: {
+            status: "overdue"
           }
         });
         res.json({
