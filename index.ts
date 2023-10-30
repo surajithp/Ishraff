@@ -95,16 +95,8 @@ app.post(
   body("username").notEmpty().withMessage("Name should not be empty"),
   body("username").isString().withMessage("Name should be string"),
   body("password")
-    .isStrongPassword({
-      minLength: 8,
-      minLowercase: 1,
-      minUppercase: 1,
-      minSymbols: 1,
-      minNumbers: 1
-    })
-    .withMessage(
-      "Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
+    .isLength({ min: 8 })
+    .withMessage("Password must be greater than 8 letters"),
   body("phoneNumber").notEmpty(),
   body("email").isEmail().withMessage("Email is not valid"),
   handleInputErrors,

@@ -772,6 +772,7 @@ export const getProjectTaskModifications = async (req, res, next) => {
 export const getProjectTasks = async (req, res, next) => {
   try {
     const createdBy = req.query.created_by;
+    const assignedTo = req.query.assigned_to;
     const projectId = req.params.id;
     const projectDetails = await prisma.project.findFirst({
       where: {
@@ -810,15 +811,18 @@ export const getProjectTasks = async (req, res, next) => {
           projectId: projectId
         }
       });
-      let userTasks = projectTasks.filter((task) => {
-        return (
-          task.managedUserId === req.user.id ||
-          task.memberId === projectMember.id
-        );
-      });
+      let userTasks = projectTasks;
       if (createdBy) {
         userTasks = projectTasks.filter((task) => {
           return task.userId === req.user.id;
+        });
+      }
+      if (assignedTo) {
+        userTasks = projectTasks.filter((task) => {
+          return (
+            task.managedUserId === req.user.id ||
+            task.memberId === projectMember.id
+          );
         });
       }
       const tasks = userTasks.map((task) => {
