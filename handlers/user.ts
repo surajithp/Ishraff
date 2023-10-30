@@ -140,18 +140,13 @@ export const signinWithOtp = async (req, res, next) => {
       res.send({ status: "failed", error: "Invalid mobile Number" });
       return;
     }
-
-    const digits = "0123456789";
-    let OTP = "";
-    for (let i = 0; i < 6; i++) {
-      OTP += digits[Math.floor(Math.random() * 10)];
-    }
+    let OTP = Math.floor(100000 + Math.random() * 900000);
     if (OTP) {
       const token = await hashPassword(user.id);
       const createdOtp = await prisma.mobileOtp.create({
         data: {
           userId: user.id,
-          otp: parseInt(OTP),
+          otp: OTP,
           expiryTime: 300,
           phone_number: user.phoneNumber
         }
