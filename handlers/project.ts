@@ -40,7 +40,7 @@ export const getProjects = async (req, res, next) => {
     } else {
       projects = projects.filter((project) => project.status !== "archived");
     }
-    res.json({ status: "success", data: projects, errors: [] });
+    res.json({ status: "success", data: projects.reverse(), errors: [] });
   } catch (error) {
     console.log("=======error", error);
     next(error);
@@ -59,7 +59,11 @@ export const getProjectsForProjectMember = async (req, res) => {
         },
       }
     );
-    res.json({ status: "success", data: projectMemberProjects, errors: [] });
+    res.json({
+      status: "success",
+      data: projectMemberProjects.reverse(),
+      errors: [],
+    });
   } catch (error) {
     res.status(422);
     res.send({ message: error });
@@ -634,7 +638,11 @@ export const getProjectInvitations = async (req, res) => {
         invitation_to: invitation.invitee.username,
       };
     });
-    res.json({ status: "success", data: projectInvitations, errors: [] });
+    res.json({
+      status: "success",
+      data: projectInvitations.reverse(),
+      errors: [],
+    });
   } catch (error) {}
 };
 
@@ -1320,7 +1328,7 @@ export const getProjectAttachments = async (req, res) => {
       if (attachments) {
         res.json({
           status: "success",
-          data: attachments,
+          data: attachments.reverse(),
           errors: [],
         });
       }
