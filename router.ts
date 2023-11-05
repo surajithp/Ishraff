@@ -24,7 +24,7 @@ import {
   removeProjectInvitation,
   getProjectAttachments,
   deleteProjectAttachment,
-  archiveProject
+  archiveProject,
 } from "./handlers/project";
 import {
   createProjectTask,
@@ -37,13 +37,13 @@ import {
   submitProjectTask,
   approveProjectTask,
   reopenProjectTask,
-  archiveProjectTask
+  archiveProjectTask,
 } from "./handlers/task";
 import {
   generateInvitationCode,
   createPlatformInvitation,
   getUserPlatformInvitations,
-  getUserProjectInvitations
+  getUserProjectInvitations,
 } from "./handlers/invitation";
 import {
   createTaskUpdate,
@@ -55,18 +55,19 @@ import {
   getTaskUpdates,
   getTaskUpdateRatings,
   updateTaskUpdateRating,
-  getUserTaskUpdateRatings
+  getUserTaskUpdateRatings,
 } from "./handlers/taskUpdate";
 import {
   getUserNotifications,
   deleteUserNotifications,
-  deleteUserNotification
+  deleteUserNotification,
+  hasNotifications,
 } from "./handlers/notifications";
 import multer from "multer";
 
 const storage = multer.memoryStorage();
 const upload = multer({
-  storage
+  storage,
 });
 
 const router = Router();
@@ -90,6 +91,8 @@ router.patch(
 );
 
 router.get("/user/notifications", getUserNotifications);
+
+router.get("/user/notifications/count", hasNotifications);
 
 router.delete("/user/notifications", deleteUserNotifications);
 

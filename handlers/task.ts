@@ -685,8 +685,6 @@ export const getProjectTask = async (req, res, next) => {
           createdBy: true,
         },
       });
-      console.log("TASK", task);
-
       let managedMemberId = task.managedMemberId;
       if (!managedMemberId) {
         const managedMember = await prisma.projectMember.findFirst({
@@ -713,6 +711,7 @@ export const getProjectTask = async (req, res, next) => {
         due_by: task.endDate,
         end_time: task.endTime,
         completedAt: task.completedAt ?? null,
+        description: task.description ?? null,
       };
       if (taskDetails) {
         if (showDetails) {
@@ -846,6 +845,7 @@ export const getProjectTasks = async (req, res, next) => {
           due_by: task.endDate,
           end_time: task.endTime,
           completedAt: task.completedAt ?? null,
+          description: task.description ?? null,
         };
       });
       if (tasks) {
@@ -942,6 +942,7 @@ export const getProjectMemberTasks = async (req, res, next) => {
             due_by: task.endDate,
             completedAt: task.completedAt ?? null,
             end_time: task.endTime,
+            description: task.description ?? null,
           };
         });
         res.json({

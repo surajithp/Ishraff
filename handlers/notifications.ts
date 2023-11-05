@@ -4,13 +4,13 @@ export const getUserNotifications = async (req, res, next) => {
   try {
     const notifications = await prisma.notifications.findMany({
       where: {
-        userId: req.user.id
-      }
+        userId: req.user.id,
+      },
     });
     res.json({
       status: "success",
       data: notifications,
-      errors: []
+      errors: [],
     });
   } catch (error) {
     next(error);
@@ -21,13 +21,13 @@ export const deleteUserNotifications = async (req, res, next) => {
   try {
     const notifications = await prisma.notifications.deleteMany({
       where: {
-        userId: req.user.id
-      }
+        userId: req.user.id,
+      },
     });
     res.json({
       status: "success",
       data: notifications,
-      errors: []
+      errors: [],
     });
   } catch (error) {
     next(error);
@@ -39,13 +39,13 @@ export const deleteUserNotification = async (req, res, next) => {
     const notificationId = req.params.notificationId;
     const notification = await prisma.notifications.delete({
       where: {
-        id: notificationId
-      }
+        id: notificationId,
+      },
     });
     res.json({
       status: "success",
       data: notification,
-      errors: []
+      errors: [],
     });
   } catch (error) {
     next(error);
@@ -57,8 +57,26 @@ export const deleteNotifications = async () => {
     let currentDate = new Date().toISOString();
     await prisma.notifications.deleteMany({
       where: {
-        createdAt: { not: null, lte: currentDate }
-      }
+        createdAt: { not: null, lte: currentDate },
+      },
     });
   } catch (error) {}
+};
+
+export const hasNotifications = async (req, res, next) => {
+  try {
+    const notifications = await prisma.notifications.findMany({
+      where: {
+        userId: req.user.id,
+      },
+    });
+    let count = notifications.length;
+    res.json({
+      status: "success",
+      data: count,
+      errors: [],
+    });
+  } catch (error) {
+    next(error);
+  }
 };
