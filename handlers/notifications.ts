@@ -55,9 +55,9 @@ export const deleteUserNotification = async (req, res, next) => {
 export const deleteNotifications = async () => {
   try {
     let currentDate = new Date().toISOString();
-    await prisma.notifications.deleteMany({
+    const response = await prisma.notifications.deleteMany({
       where: {
-        createdAt: { not: null, lte: currentDate },
+        createdAt: { lte: currentDate },
       },
     });
   } catch (error) {}

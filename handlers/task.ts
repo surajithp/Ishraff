@@ -90,6 +90,16 @@ export const createProjectTask = async (req, res, next) => {
               },
             });
             if (task) {
+              if(projectDetails.status === 'completed'){
+                await prisma.project.update({
+                  where:{
+                    id: projectId
+                  },
+                  data:{
+                    status: "in_progress"
+                  }
+                })
+              }
               let currentDate = new Date().toISOString();
               await prisma.projectTask.update({
                 where: {
@@ -110,14 +120,16 @@ export const createProjectTask = async (req, res, next) => {
                   description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`,
                 },
               });
-              await prisma.notifications.create({
-                data: {
-                  userId: managedUser.userId,
-                  type: "task",
-                  title: `${projectDetails.name} task creation`,
-                  description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`,
-                },
-              });
+              if(assignedMember.userId !== managedUser.userId){
+                await prisma.notifications.create({
+                  data: {
+                    userId: managedUser.userId,
+                    type: "task",
+                    title: `${projectDetails.name} task creation`,
+                    description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`,
+                  },
+                });
+              }
               res.json({
                 status: "success",
                 data: task,
