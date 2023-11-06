@@ -320,6 +320,7 @@ export const createProjectInvitation = async (req, res) => {
         const projectMember = await prisma.projectMember.findFirst({
           where: {
             userId: req.user.id,
+            projectId: projectId
           },
           include: {
             user: true,
@@ -1356,7 +1357,7 @@ export const updateAllProjects = async () => {
       where: {
         startDate: null,
         startTime: null,
-        status: { not: "archived" },
+        status: { notIn : ['archived', "completed"]},
       },
       data: {
         status: "in_progress",
@@ -1366,7 +1367,7 @@ export const updateAllProjects = async () => {
       where: {
         startDate: { not: null, gte: currentDate },
         startTime: { not: null },
-        status: { not: "archived" },
+        status: { notIn : ['archived', "completed"]},
       },
       data: {
         status: "draft",
@@ -1378,7 +1379,7 @@ export const updateAllProjects = async () => {
         startTime: { not: null },
         endDate: { not: null, gte: currentDate },
         endTime: { not: null },
-        status: { not: "archived" },
+        status: { notIn : ['archived', "completed"]},
       },
       data: {
         status: "in_progress",
@@ -1388,7 +1389,7 @@ export const updateAllProjects = async () => {
       where: {
         endDate: { not: null, lte: currentDate },
         endTime: { not: null },
-        status: { not: "archived" },
+        status: { notIn : ['archived', "completed"]},
       },
       data: {
         status: "overdue",
