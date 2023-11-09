@@ -727,13 +727,19 @@ export const getProjectMember = async (req, res, next) => {
         const approvedTasks = managedTasks.filter(
           (task) => task.status === "completed"
         );
+        const completedTasks = assignedTasks.filter(
+          (task) => task.status === "completed"
+        );
+        const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
         const tasksSummary = {
           assignedTasks: assignedTasks.length,
           createdTasks: createdTasks.length,
           managedTasks: managedTasks.length,
           inProgressTasks: inProgressTasks.length,
           approvedTasks: approvedTasks.length,
-          inreviewTasks: inReviewTasks.length
+          inreviewTasks: inReviewTasks.length,
+          overdueTasks: overdueTasks.length,
+          completedTasks: completedTasks.length
         };
         projectMember.tasksSummary = tasksSummary;
       }
@@ -1132,16 +1138,22 @@ export const getProjectMembers = async (req, res) => {
       const inReviewTasks = assignedTasks.filter(
         (task) => task.status === "in_review"
       );
-      const approvedTasks = assignedTasks.filter(
+      const approvedTasks = managedTasks.filter(
         (task) => task.status === "completed"
       );
+      const completedTasks = assignedTasks.filter(
+        (task) => task.status === "completed"
+      );
+      const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
       const tasksSummary = {
         assignedTasks: assignedTasks.length,
         createdTasks: createdTasks.length,
         managedTasks: managedTasks.length,
         inProgressTasks: inProgressTasks.length,
         approvedTasks: approvedTasks.length,
-        inreviewTasks: inReviewTasks.length
+        inreviewTasks: inReviewTasks.length,
+        completedTasks: completedTasks.length,
+        overdueTasks: overdueTasks.length
       };
       member.tasksSummary = tasksSummary;
     });
