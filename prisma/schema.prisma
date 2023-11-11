@@ -48,6 +48,7 @@ model Project {
   id                      String                    @id @default(uuid())
   displayId               Int                       @default(autoincrement())
   createdAt               DateTime                  @default(now())
+  completedAt             DateTime?
   name                    String
   type                    ProjectType               @default(self)
   location                String?

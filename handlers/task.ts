@@ -418,13 +418,14 @@ export const approveProjectTask = async (req, res, next) => {
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
+          const status =
+            taskDetails.status === "overdue" ? "delayed" : "completed";
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
             },
             data: {
-              status:
-                taskDetails.status === "overdue" ? "delayed" : "completed",
+              status: status,
               completedAt: new Date().toISOString(),
               isCompleted: true
             }

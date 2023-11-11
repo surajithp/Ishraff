@@ -160,6 +160,26 @@ export const updateProject = async (req, res, next) => {
     });
     if (projectDetails) {
       if (!req.body.type) {
+        let status = projectDetails.status;
+        if (req.body.startDate) {
+          const startDateInMilliSecs = new Date(req.body.startDate).getTime();
+          const currentTimeInMilliSecs = new Date().getTime();
+          if (startDateInMilliSecs > currentTimeInMilliSecs) {
+            status = "draft";
+          }
+        }
+        if (req.body.endDate) {
+          const endDateInMilliSecs = new Date(req.body.endDate).getTime();
+          const currentTimeInMilliSecs = new Date().getTime();
+          if (endDateInMilliSecs < currentTimeInMilliSecs) {
+            status = "overdue";
+          } else if (
+            status === "overdue" &&
+            endDateInMilliSecs > currentTimeInMilliSecs
+          ) {
+            status = "in_progress";
+          }
+        }
         const projectMember = await prisma.projectMember.findFirst({
           where: {
             userId: req.user.id,
@@ -172,7 +192,8 @@ export const updateProject = async (req, res, next) => {
               id: projectId
             },
             data: {
-              ...req.body
+              ...req.body,
+              status: status
             }
           });
           res.json({ status: "success", data: project, errors: [] });
@@ -641,7 +662,7 @@ export const getProjectInvitations = async (req, res) => {
     });
     res.json({
       status: "success",
-      data: projectInvitations.reverse(),
+      data: projectInvitations,
       errors: []
     });
   } catch (error) {}
@@ -730,7 +751,9 @@ export const getProjectMember = async (req, res, next) => {
         const completedTasks = assignedTasks.filter(
           (task) => task.status === "completed"
         );
-        const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
+        const overdueTasks = assignedTasks.filter(
+          (task) => task.status === "overdue"
+        );
         const tasksSummary = {
           assignedTasks: assignedTasks.length,
           createdTasks: createdTasks.length,
@@ -1144,7 +1167,9 @@ export const getProjectMembers = async (req, res) => {
       const completedTasks = assignedTasks.filter(
         (task) => task.status === "completed"
       );
-      const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
+      const overdueTasks = assignedTasks.filter(
+        (task) => task.status === "overdue"
+      );
       const tasksSummary = {
         assignedTasks: assignedTasks.length,
         createdTasks: createdTasks.length,
