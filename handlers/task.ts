@@ -512,12 +512,19 @@ export const reopenProjectTask = async (req, res, next) => {
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
+          let status: any = "in_progress";
+          const endDate = taskDetails.endDate;
+          const endDateInMilliSecs = new Date(endDate).getTime();
+          const currentDateInMilliSecs = new Date().getTime();
+          if (currentDateInMilliSecs > endDateInMilliSecs) {
+            status = "overdue";
+          }
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
             },
             data: {
-              status: "in_progress",
+              status: status,
               reopenedAt: new Date().toISOString(),
               isCompleted: false
             }
