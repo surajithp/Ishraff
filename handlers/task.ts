@@ -1,4 +1,5 @@
 import prisma from "../db";
+import { TASK_STATUS } from "@prisma/client";
 
 export const createProjectTask = async (req, res, next) => {
   try {
@@ -282,6 +283,45 @@ export const updateProjectTask = async (req, res, next) => {
               });
             }
           }
+          if (req.body.startDate) {
+            let startDateInMilliSecs = new Date(req.body.startDate).getTime();
+            const currentTimeInMilliSecs = new Date().getTime();
+            const startTime = req.body.startTime;
+            const [hours, minutes] = startTime.split(":");
+            startDateInMilliSecs =
+              startDateInMilliSecs +
+              (hours * 60 * 60 + minutes * 60) * 1000 -
+              4 * 60 * 60 * 1000;
+            if (
+              taskDetails.status === "draft" &&
+              startDateInMilliSecs < currentTimeInMilliSecs
+            ) {
+              data.status = "in_progress";
+            } else if (
+              taskDetails.status === "in_progress" &&
+              startDateInMilliSecs > currentTimeInMilliSecs
+            ) {
+              data.status = "draft";
+            }
+          }
+          if (req.body.endDate) {
+            let endDateInMilliSecs = new Date(req.body.endDate).getTime();
+            const currentTimeInMilliSecs = new Date().getTime();
+            const endTime = req.body.endTime;
+            const [hrs, mnts] = endTime.split(":");
+            endDateInMilliSecs =
+              endDateInMilliSecs +
+              (hrs * 60 * 60 + mnts * 60) * 1000 -
+              4 * 60 * 60 * 1000;
+            if (endDateInMilliSecs < currentTimeInMilliSecs) {
+              data.status = "overdue";
+            } else if (
+              taskDetails.status === "overdue" &&
+              endDateInMilliSecs > currentTimeInMilliSecs
+            ) {
+              data.status = "in_progress";
+            }
+          }
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
@@ -343,13 +383,17 @@ export const submitProjectTask = async (req, res, next) => {
         taskDetails.status === "in_progress" ||
         taskDetails.status === "overdue"
       ) {
+        let status: TASK_STATUS = "in_review";
+        // if (taskDetails.status === "overdue") {
+        //   status = "overdue";
+        // }
         if (taskDetails.memberId === projectMemberDetails.id) {
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
             },
             data: {
-              status: "in_review",
+              status: status,
               submittedAt: new Date().toISOString()
             }
           });
@@ -410,21 +454,23 @@ export const approveProjectTask = async (req, res, next) => {
           assignedTo: true
         }
       });
-      if (
-        taskDetails.status === "in_review" ||
-        taskDetails.status === "overdue"
-      ) {
+      if (taskDetails.status === "in_review") {
         if (
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
+          let status: TASK_STATUS = "completed";
+          const endDate = new Date(taskDetails.endDate);
+          const endDateInMilliSecs = new Date(taskDetails.endDate).getTime();
+          if (endDateInMilliSecs < new Date().getTime()) {
+            status = "delayed";
+          }
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
             },
             data: {
-              status:
-                taskDetails.status === "overdue" ? "delayed" : "completed",
+              status: status,
               completedAt: new Date().toISOString(),
               isCompleted: true
             }
@@ -448,6 +494,7 @@ export const approveProjectTask = async (req, res, next) => {
                 id: projectId
               },
               data: {
+                completedAt: new Date().toISOString(),
                 status: "completed"
               }
             });
@@ -511,12 +558,19 @@ export const reopenProjectTask = async (req, res, next) => {
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
+          let status: any = "in_progress";
+          const endDate = taskDetails.endDate;
+          const endDateInMilliSecs = new Date(endDate).getTime();
+          const currentDateInMilliSecs = new Date().getTime();
+          if (currentDateInMilliSecs > endDateInMilliSecs) {
+            status = "overdue";
+          }
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
             },
             data: {
-              status: "in_progress",
+              status: status,
               reopenedAt: new Date().toISOString(),
               isCompleted: false
             }
@@ -1048,7 +1102,7 @@ export const updateAllTasks = async () => {
         startTime: { not: null },
         endDate: { lte: currentDate },
         endTime: { not: null },
-        status: { notIn: ["archived", "completed", "overdue"] }
+        status: { notIn: ["archived", "completed", "delayed", "overdue"] }
       },
       data: {
         status: "overdue"

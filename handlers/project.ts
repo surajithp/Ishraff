@@ -160,6 +160,26 @@ export const updateProject = async (req, res, next) => {
     });
     if (projectDetails) {
       if (!req.body.type) {
+        let status = projectDetails.status;
+        if (req.body.startDate) {
+          const startDateInMilliSecs = new Date(req.body.startDate).getTime();
+          const currentTimeInMilliSecs = new Date().getTime();
+          if (startDateInMilliSecs > currentTimeInMilliSecs) {
+            status = "draft";
+          }
+        }
+        if (req.body.endDate) {
+          const endDateInMilliSecs = new Date(req.body.endDate).getTime();
+          const currentTimeInMilliSecs = new Date().getTime();
+          if (endDateInMilliSecs < currentTimeInMilliSecs) {
+            status = "overdue";
+          } else if (
+            status === "overdue" &&
+            endDateInMilliSecs > currentTimeInMilliSecs
+          ) {
+            status = "in_progress";
+          }
+        }
         const projectMember = await prisma.projectMember.findFirst({
           where: {
             userId: req.user.id,
@@ -172,7 +192,8 @@ export const updateProject = async (req, res, next) => {
               id: projectId
             },
             data: {
-              ...req.body
+              ...req.body,
+              status: status
             }
           });
           res.json({ status: "success", data: project, errors: [] });
@@ -262,34 +283,55 @@ export const archiveProject = async (req, res, next) => {
             await Promise.all(proms);
           }
         } else {
-          const project = await prisma.project.update({
+          const projectTasks = await prisma.projectTask.findMany({
             where: {
-              id: projectId
-            },
-            data: {
-              status: "archived"
+              projectId: projectId,
+              isArchived: false
             }
           });
-          res.json({ status: "success", data: project, errors: [] });
-          const projectMembers = await prisma.projectMember.findMany({
-            where: {
-              projectId: projectId
-            }
-          });
-          const proms = [];
-          projectMembers.forEach((member) => {
-            proms.push(
-              prisma.notifications.create({
-                data: {
-                  userId: member.userId,
-                  type: "project",
-                  title: `${projectDetails.name} status changed`,
-                  description: `${projectDetails.name} status has been changed to archived`
-                }
-              })
-            );
-          });
-          await Promise.all(proms);
+          const totalTasks = projectTasks;
+          const completedTasks = projectTasks.filter(
+            (task) => task.status === "completed" || task.status === "delayed"
+          );
+          if (
+            completedTasks.length > 0 &&
+            totalTasks.length === completedTasks.length
+          ) {
+            const project = await prisma.project.update({
+              where: {
+                id: projectId
+              },
+              data: {
+                status: "archived"
+              }
+            });
+            res.json({ status: "success", data: project, errors: [] });
+            const projectMembers = await prisma.projectMember.findMany({
+              where: {
+                projectId: projectId
+              }
+            });
+            const proms = [];
+            projectMembers.forEach((member) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: member.userId,
+                    type: "project",
+                    title: `${projectDetails.name} status changed`,
+                    description: `${projectDetails.name} status has been changed to archived`
+                  }
+                })
+              );
+            });
+            await Promise.all(proms);
+          } else {
+            res.status(422);
+            res.send({
+              message:
+                "Project cannot be archived as tasks are not completed yet"
+            });
+          }
         }
       } else {
         res.status(422);
@@ -641,7 +683,7 @@ export const getProjectInvitations = async (req, res) => {
     });
     res.json({
       status: "success",
-      data: projectInvitations.reverse(),
+      data: projectInvitations,
       errors: []
     });
   } catch (error) {}
@@ -730,7 +772,9 @@ export const getProjectMember = async (req, res, next) => {
         const completedTasks = assignedTasks.filter(
           (task) => task.status === "completed"
         );
-        const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
+        const overdueTasks = assignedTasks.filter(
+          (task) => task.status === "overdue"
+        );
         const tasksSummary = {
           assignedTasks: assignedTasks.length,
           createdTasks: createdTasks.length,
@@ -1144,7 +1188,9 @@ export const getProjectMembers = async (req, res) => {
       const completedTasks = assignedTasks.filter(
         (task) => task.status === "completed"
       );
-      const overdueTasks = assignedTasks.filter((task)=>task.status === "overdue")
+      const overdueTasks = assignedTasks.filter(
+        (task) => task.status === "overdue"
+      );
       const tasksSummary = {
         assignedTasks: assignedTasks.length,
         createdTasks: createdTasks.length,
