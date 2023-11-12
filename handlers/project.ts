@@ -283,34 +283,55 @@ export const archiveProject = async (req, res, next) => {
             await Promise.all(proms);
           }
         } else {
-          const project = await prisma.project.update({
+          const projectTasks = await prisma.projectTask.findMany({
             where: {
-              id: projectId
-            },
-            data: {
-              status: "archived"
+              projectId: projectId,
+              isArchived: false
             }
           });
-          res.json({ status: "success", data: project, errors: [] });
-          const projectMembers = await prisma.projectMember.findMany({
-            where: {
-              projectId: projectId
-            }
-          });
-          const proms = [];
-          projectMembers.forEach((member) => {
-            proms.push(
-              prisma.notifications.create({
-                data: {
-                  userId: member.userId,
-                  type: "project",
-                  title: `${projectDetails.name} status changed`,
-                  description: `${projectDetails.name} status has been changed to archived`
-                }
-              })
-            );
-          });
-          await Promise.all(proms);
+          const totalTasks = projectTasks;
+          const completedTasks = projectTasks.filter(
+            (task) => task.status === "completed" || task.status === "delayed"
+          );
+          if (
+            completedTasks.length > 0 &&
+            totalTasks.length === completedTasks.length
+          ) {
+            const project = await prisma.project.update({
+              where: {
+                id: projectId
+              },
+              data: {
+                status: "archived"
+              }
+            });
+            res.json({ status: "success", data: project, errors: [] });
+            const projectMembers = await prisma.projectMember.findMany({
+              where: {
+                projectId: projectId
+              }
+            });
+            const proms = [];
+            projectMembers.forEach((member) => {
+              proms.push(
+                prisma.notifications.create({
+                  data: {
+                    userId: member.userId,
+                    type: "project",
+                    title: `${projectDetails.name} status changed`,
+                    description: `${projectDetails.name} status has been changed to archived`
+                  }
+                })
+              );
+            });
+            await Promise.all(proms);
+          } else {
+            res.status(422);
+            res.send({
+              message:
+                "Project cannot be archived as tasks are not completed yet"
+            });
+          }
         }
       } else {
         res.status(422);

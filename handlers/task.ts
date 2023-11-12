@@ -283,6 +283,45 @@ export const updateProjectTask = async (req, res, next) => {
               });
             }
           }
+          if (req.body.startDate) {
+            let startDateInMilliSecs = new Date(req.body.startDate).getTime();
+            const currentTimeInMilliSecs = new Date().getTime();
+            const startTime = req.body.startTime;
+            const [hours, minutes] = startTime.split(":");
+            startDateInMilliSecs =
+              startDateInMilliSecs +
+              (hours * 60 * 60 + minutes * 60) * 1000 -
+              4 * 60 * 60 * 1000;
+            if (
+              taskDetails.status === "draft" &&
+              startDateInMilliSecs < currentTimeInMilliSecs
+            ) {
+              data.status = "in_progress";
+            } else if (
+              taskDetails.status === "in_progress" &&
+              startDateInMilliSecs > currentTimeInMilliSecs
+            ) {
+              data.status = "draft";
+            }
+          }
+          if (req.body.endDate) {
+            let endDateInMilliSecs = new Date(req.body.endDate).getTime();
+            const currentTimeInMilliSecs = new Date().getTime();
+            const endTime = req.body.endTime;
+            const [hrs, mnts] = endTime.split(":");
+            endDateInMilliSecs =
+              endDateInMilliSecs +
+              (hrs * 60 * 60 + mnts * 60) * 1000 -
+              4 * 60 * 60 * 1000;
+            if (endDateInMilliSecs < currentTimeInMilliSecs) {
+              data.status = "overdue";
+            } else if (
+              taskDetails.status === "overdue" &&
+              endDateInMilliSecs > currentTimeInMilliSecs
+            ) {
+              data.status = "in_progress";
+            }
+          }
           const task = await prisma.projectTask.update({
             where: {
               id: taskId
@@ -455,6 +494,7 @@ export const approveProjectTask = async (req, res, next) => {
                 id: projectId
               },
               data: {
+                completedAt: new Date().toISOString(),
                 status: "completed"
               }
             });
@@ -1062,7 +1102,7 @@ export const updateAllTasks = async () => {
         startTime: { not: null },
         endDate: { lte: currentDate },
         endTime: { not: null },
-        status: { notIn: ["archived", "completed", "overdue"] }
+        status: { notIn: ["archived", "completed", "delayed", "overdue"] }
       },
       data: {
         status: "overdue"
