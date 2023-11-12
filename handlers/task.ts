@@ -101,18 +101,23 @@ export const createProjectTask = async (req, res, next) => {
                   }
                 });
               }
-              // let currentDate = new Date().toISOString();
-              // await prisma.projectTask.update({
-              //   where: {
-              //     id: task.id,
-              //     startDate: { gte: currentDate },
-              //     startTime: { not: null },
-              //     status: { not: "archived" }
-              //   },
-              //   data: {
-              //     status: "draft"
-              //   }
-              // });
+              if (req.body.startDate) {
+                const startDateInMilliSecs = new Date(
+                  req.body.startDate
+                ).getTime();
+                const currentTimeInMilliSecs = new Date().getTime();
+                if (startDateInMilliSecs > currentTimeInMilliSecs) {
+                  status = "draft";
+                  await prisma.projectTask.update({
+                    where: {
+                      id: task.id
+                    },
+                    data: {
+                      status: status
+                    }
+                  });
+                }
+              }
               await prisma.notifications.create({
                 data: {
                   userId: assignedMember.userId,
