@@ -772,6 +772,9 @@ export const getProjectMember = async (req, res, next) => {
         const completedTasks = assignedTasks.filter(
           (task) => task.status === "completed"
         );
+        const delayedTasks = assignedTasks.filter(
+          (task) => task.status === "delayed"
+        );
         const overdueTasks = assignedTasks.filter(
           (task) => task.status === "overdue"
         );
@@ -783,7 +786,8 @@ export const getProjectMember = async (req, res, next) => {
           approvedTasks: approvedTasks.length,
           inreviewTasks: inReviewTasks.length,
           overdueTasks: overdueTasks.length,
-          completedTasks: completedTasks.length
+          completedTasks: completedTasks.length,
+          delayedTasks: delayedTasks.length
         };
         projectMember.tasksSummary = tasksSummary;
       }
@@ -1188,6 +1192,9 @@ export const getProjectMembers = async (req, res) => {
       const completedTasks = assignedTasks.filter(
         (task) => task.status === "completed"
       );
+      const delayedTasks = assignedTasks.filter(
+        (task) => task.status === "delayed"
+      );
       const overdueTasks = assignedTasks.filter(
         (task) => task.status === "overdue"
       );
@@ -1199,7 +1206,8 @@ export const getProjectMembers = async (req, res) => {
         approvedTasks: approvedTasks.length,
         inreviewTasks: inReviewTasks.length,
         completedTasks: completedTasks.length,
-        overdueTasks: overdueTasks.length
+        overdueTasks: overdueTasks.length,
+        delayedTasks: delayedTasks.length
       };
       member.tasksSummary = tasksSummary;
     });

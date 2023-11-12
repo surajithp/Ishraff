@@ -572,6 +572,7 @@ export const reopenProjectTask = async (req, res, next) => {
             data: {
               status: status,
               reopenedAt: new Date().toISOString(),
+              completedAt: null,
               isCompleted: false
             }
           });
@@ -905,6 +906,9 @@ export const getProjectTasks = async (req, res, next) => {
         where: {
           userId: req.user.id,
           projectId: projectId
+        },
+        include: {
+          user: true
         }
       });
       let userTasks = projectTasks;
@@ -921,6 +925,11 @@ export const getProjectTasks = async (req, res, next) => {
           );
         });
       }
+      userTasks.forEach((task) => {
+        if (task.managedMemberId === projectMember.id) {
+          task.managedUserName = projectMember.user.username;
+        }
+      });
       const tasks = userTasks.map((task) => {
         return {
           id: task.id,
