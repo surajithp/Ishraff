@@ -227,7 +227,8 @@ export const archiveProject = async (req, res, next) => {
     if (projectDetails) {
       const projectMember = await prisma.projectMember.findFirst({
         where: {
-          userId: req.user.id
+          userId: req.user.id,
+          projectId: projectId
         }
       });
       if (projectMember && projectMember.role === "admin") {
@@ -646,7 +647,8 @@ export const getProjectInvitations = async (req, res) => {
     }
     const isProjectMember = await prisma.projectMember.findFirst({
       where: {
-        userId: req.user.id
+        userId: req.user.id,
+        projectId: projectId
       }
     });
     if (isProjectMember) {
@@ -700,7 +702,8 @@ export const createProjectMember = async (req, res, next) => {
     if (projectDetails) {
       const projectMemberExisted = await prisma.projectMember.findFirst({
         where: {
-          userId: req.body.userId
+          userId: req.body.userId,
+          projectId: projectId
         }
       });
       if (!projectMemberExisted) {
@@ -980,7 +983,8 @@ export const updateProjectMember = async (req, res, next) => {
     const projectId = req.params.id;
     const userProjectMemberDetails = await prisma.projectMember.findFirst({
       where: {
-        userId: req.user.id
+        userId: req.user.id,
+        projectId: projectId
       }
     });
     if (userProjectMemberDetails && userProjectMemberDetails.role === "admin") {
@@ -1226,7 +1230,8 @@ export const createProjectAttachment = async (req, res, next) => {
     if (projectDetails) {
       const projectMember = await prisma.projectMember.findFirst({
         where: {
-          userId: req.user.id
+          userId: req.user.id,
+          projectId: projectId
         },
         include: {
           user: true
