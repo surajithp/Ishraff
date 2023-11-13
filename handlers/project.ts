@@ -330,14 +330,14 @@ export const archiveProject = async (req, res, next) => {
             res.status(422);
             res.send({
               message:
-                "Project cannot be archived as tasks are not completed yet"
+                "Project cannot be closed as tasks are not completed yet"
             });
           }
         }
       } else {
         res.status(422);
         res.send({
-          message: "Only Project Admin can archive project details"
+          message: "Only Project Admin can close project details"
         });
       }
     } else {
