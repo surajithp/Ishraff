@@ -8,16 +8,16 @@ export const generateInvitationCode = (req, res) => {
 export const createPlatformInvitation = async (req, res) => {
   const senderInvitation = await prisma.platformInvitation.findFirst({
     where: {
-      receiverId: req.body.receiverId
-    }
+      receiverId: req.body.receiverId,
+    },
   });
   if (!senderInvitation) {
     const invitation = await prisma.platformInvitation.create({
       data: {
         senderId: req.user.id,
         receiverId: req.body.receiverId,
-        status: "not_accepted"
-      }
+        status: "not_accepted",
+      },
     });
     res.json({ status: "success", data: invitation, errors: [] });
   } else {
@@ -32,23 +32,29 @@ export const getUserProjectInvitations = async (req, res, next) => {
     const invitationType = req.query.invitation_type;
     const receivedInvitations = await prisma.projectInvitation.findMany({
       where: {
-        inviteeId: req.user.id
+        inviteeId: req.user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
       include: {
         invitedBy: true,
         invitee: true,
-        project: true
-      }
+        project: true,
+      },
     });
     const sentInvitations = await prisma.projectInvitation.findMany({
       where: {
-        userId: req.user.id
+        userId: req.user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
       include: {
         invitedBy: true,
         invitee: true,
-        project: true
-      }
+        project: true,
+      },
     });
     receivedInvitations.forEach((invitation: any) => {
       invitation.invitationType = "received";
@@ -74,7 +80,10 @@ export const getUserProjectInvitations = async (req, res, next) => {
 export const getUserPlatformInvitations = async (req, res) => {
   const invitations = await prisma.platformInvitation.findMany({
     where: {
-      senderId: req.user.id
+      senderId: req.user.id,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
     include: {
       invitedBy: {
@@ -83,8 +92,8 @@ export const getUserPlatformInvitations = async (req, res) => {
           username: true,
           phoneNumber: true,
           id: true,
-          password: false
-        }
+          password: false,
+        },
       },
       invitee: {
         select: {
@@ -92,10 +101,10 @@ export const getUserPlatformInvitations = async (req, res) => {
           username: true,
           phoneNumber: true,
           id: true,
-          password: false
-        }
-      }
-    }
+          password: false,
+        },
+      },
+    },
   });
   // let proms = [];
   // invitations.forEach((invitation) => {
