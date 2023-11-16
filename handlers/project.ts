@@ -166,6 +166,11 @@ export const updateProject = async (req, res, next) => {
           const currentTimeInMilliSecs = new Date().getTime();
           if (startDateInMilliSecs > currentTimeInMilliSecs) {
             status = "draft";
+          } else if (
+            status === "draft" &&
+            startDateInMilliSecs < currentTimeInMilliSecs
+          ) {
+            status = "in_progress";
           }
         }
         if (req.body.endDate) {
@@ -295,8 +300,10 @@ export const archiveProject = async (req, res, next) => {
             (task) => task.status === "completed" || task.status === "delayed"
           );
           if (
-            completedTasks.length > 0 &&
-            totalTasks.length === completedTasks.length
+            totalTasks.length === 0 ||
+            (completedTasks.length > 0 &&
+              totalTasks.length > 0 &&
+              totalTasks.length === completedTasks.length)
           ) {
             const project = await prisma.project.update({
               where: {
@@ -329,8 +336,7 @@ export const archiveProject = async (req, res, next) => {
           } else {
             res.status(422);
             res.send({
-              message:
-                "Project cannot be closed as tasks are not completed yet"
+              message: "Project cannot be closed as tasks are not completed yet"
             });
           }
         }
