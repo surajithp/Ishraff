@@ -91,16 +91,16 @@ export const createProjectTask = async (req, res, next) => {
               }
             });
             if (task) {
-              if (projectDetails.status === "completed") {
-                await prisma.project.update({
-                  where: {
-                    id: projectId
-                  },
-                  data: {
-                    status: "in_progress"
-                  }
-                });
-              }
+              // if (projectDetails.status === "archived") {
+              //   await prisma.project.update({
+              //     where: {
+              //       id: projectId
+              //     },
+              //     data: {
+              //       status: "in_progress"
+              //     }
+              //   });
+              // }
               if (req.body.startDate) {
                 const startDateInMilliSecs = new Date(
                   req.body.startDate
@@ -480,30 +480,30 @@ export const approveProjectTask = async (req, res, next) => {
               isCompleted: true
             }
           });
-          const projectTasks = await prisma.projectTask.findMany({
-            where: {
-              projectId: projectId,
-              isArchived: false
-            }
-          });
-          const totalTasks = projectTasks;
-          const completedTasks = projectTasks.filter(
-            (task) => task.status === "completed" || task.status === "delayed"
-          );
-          if (
-            totalTasks.length > 1 &&
-            totalTasks.length === completedTasks.length
-          ) {
-            await prisma.project.update({
-              where: {
-                id: projectId
-              },
-              data: {
-                completedAt: new Date().toISOString(),
-                status: "completed"
-              }
-            });
-          }
+          // const projectTasks = await prisma.projectTask.findMany({
+          //   where: {
+          //     projectId: projectId,
+          //     isArchived: false
+          //   }
+          // });
+          // const totalTasks = projectTasks;
+          // const completedTasks = projectTasks.filter(
+          //   (task) => task.status === "completed" || task.status === "delayed"
+          // );
+          // if (
+          //   totalTasks.length > 1 &&
+          //   totalTasks.length === completedTasks.length
+          // ) {
+          //   await prisma.project.update({
+          //     where: {
+          //       id: projectId
+          //     },
+          //     data: {
+          //       completedAt: new Date().toISOString(),
+          //       status: "completed"
+          //     }
+          //   });
+          // }
           await prisma.notifications.create({
             data: {
               userId: taskDetails.assignedTo.userId,
@@ -723,20 +723,21 @@ export const rejectProjectTask = async (req, res, next) => {
             id: taskId
           },
           data: {
-            status: "in_progress"
+            status: "in_progress",
+            rejectedAt: new Date().toISOString()
           }
         });
-        await prisma.projectTask.update({
-          where: {
-            id: taskId,
-            endDate: { not: null, lte: currentDate },
-            endTime: { not: null },
-            status: { not: "archived" }
-          },
-          data: {
-            status: "overdue"
-          }
-        });
+        // await prisma.projectTask.update({
+        //   where: {
+        //     id: taskId,
+        //     endDate: { not: null, lte: currentDate },
+        //     endTime: { not: null },
+        //     status: { not: "archived" }
+        //   },
+        //   data: {
+        //     status: "overdue"
+        //   }
+        // });
         res.json({
           status: "success",
           data: task,
@@ -808,6 +809,8 @@ export const getProjectTask = async (req, res, next) => {
         due_by: task.endDate,
         end_time: task.endTime,
         completedAt: task.completedAt ?? null,
+        submitted_at: task.submittedAt ?? null,
+        rejected_at: task.rejectedAt ?? null,
         description: task.description ?? null
       };
       if (taskDetails) {
@@ -950,6 +953,8 @@ export const getProjectTasks = async (req, res, next) => {
           due_by: task.endDate,
           end_time: task.endTime,
           completedAt: task.completedAt ?? null,
+          submitted_at: task.submittedAt ?? null,
+          rejected_at: task.rejectedAt ?? null,
           description: task.description ?? null
         };
       });
@@ -1046,6 +1051,8 @@ export const getProjectMemberTasks = async (req, res, next) => {
             name: task.name,
             due_by: task.endDate,
             completedAt: task.completedAt ?? null,
+            submitted_at: task.submittedAt ?? null,
+            rejected_at: task.rejectedAt ?? null,
             end_time: task.endTime,
             description: task.description ?? null
           };
