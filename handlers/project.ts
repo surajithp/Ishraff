@@ -6,6 +6,7 @@ import {
   ListObjectsV2Command
 } from "@aws-sdk/client-s3";
 import { slugifyString } from "../modules/utils";
+import { PROJECT_STATUS } from "@prisma/client";
 
 export const getProjects = async (req, res, next) => {
   try {
@@ -120,14 +121,39 @@ export const getProject = async (req, res, next) => {
 
 export const createProject = async (req, res, next) => {
   try {
+    let status: PROJECT_STATUS = "in_progress";
+    if (req.body.startDate) {
+      let startDateInMilliSecs = new Date(req.body.startDate).getTime();
+      const currentTimeInMilliSecs = new Date().getTime();
+      const startTime = req.body.startTime;
+      const [hours, minutes] = startTime.split(":");
+      startDateInMilliSecs =
+        startDateInMilliSecs +
+        (hours * 60 * 60 + minutes * 60) * 1000 -
+        4 * 60 * 60 * 1000;
+      if (startDateInMilliSecs > currentTimeInMilliSecs) {
+        status = "draft";
+      }
+    }
+    if (req.body.endDate) {
+      const endDateInMilliSecs = new Date(req.body.endDate).getTime();
+      const currentTimeInMilliSecs = new Date().getTime();
+      if (endDateInMilliSecs < currentTimeInMilliSecs) {
+        status = "overdue";
+      }
+    }
     const project = await prisma.project.create({
       data: {
         name: req.body.name,
         type: req.body.type,
         latitude: req.body.latitude,
         longitude: req.body.longitude,
-        status: "in_progress",
-        belongsToId: req.user.id
+        status: status,
+        belongsToId: req.user.id,
+        startDate: req.body.startDate,
+        startTime: req.body.startTime,
+        endDate: req.body.endDate,
+        endTime: req.body.endTime
       }
     });
     if (project) {
