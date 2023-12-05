@@ -1,75 +1,75 @@
-import prisma from "../db";
-import { TASK_STATUS } from "@prisma/client";
+import prisma from "../db"
+import { TASK_STATUS } from "@prisma/client"
 
 export const createProjectTask = async (req, res, next) => {
   try {
-    let isDraft = false;
-    let status: any = "in_progress";
+    let isDraft = false
+    let status: any = "in_progress"
     if (req.query.draft) {
-      isDraft = true;
+      isDraft = true
     }
-    const projectId = req.params.id;
+    const projectId = req.params.id
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     if (projectDetails) {
       const memberDetails = await prisma.projectMember.findFirst({
         where: {
           projectId: projectId,
-          userId: req.user.id
+          userId: req.user.id,
         },
         include: {
-          user: true
-        }
-      });
+          user: true,
+        },
+      })
       if (memberDetails) {
         let isEligibleToCreateTask =
-          memberDetails.role === "manager" || memberDetails.role === "admin";
+          memberDetails.role === "manager" || memberDetails.role === "admin"
         if (isEligibleToCreateTask) {
-          const managedMemberId = req.body.managedMemberId;
-          let managedUser = null;
+          const managedMemberId = req.body.managedMemberId
+          let managedUser = null
           if (managedMemberId === "self") {
-            managedUser = memberDetails;
+            managedUser = memberDetails
           } else {
             const projectMemberDetails = await prisma.projectMember.findFirst({
               where: {
                 id: managedMemberId,
-                projectId: projectId
+                projectId: projectId,
               },
               include: {
-                user: true
-              }
-            });
+                user: true,
+              },
+            })
             if (projectMemberDetails) {
-              managedUser = projectMemberDetails;
+              managedUser = projectMemberDetails
             } else {
-              throw new Error("Managed User is not Project Member");
+              throw new Error("Managed User is not Project Member")
             }
           }
           if (managedUser.role !== "admin" && managedUser.role !== "manager") {
-            throw new Error("Managed User should be Admin or Manager");
+            throw new Error("Managed User should be Admin or Manager")
           }
-          let assignedMember = null;
+          let assignedMember = null
           if (req.body.memberId === "self") {
             assignedMember = await prisma.projectMember.findFirst({
               where: {
                 userId: req.user.id,
-                projectId: projectId
-              }
-            });
+                projectId: projectId,
+              },
+            })
           } else {
             assignedMember = await prisma.projectMember.findFirst({
               where: {
                 id: req.body.memberId,
-                projectId: projectId
-              }
-            });
+                projectId: projectId,
+              },
+            })
           }
           if (assignedMember) {
             if (isDraft) {
-              status = "draft";
+              status = "draft"
             }
             const task = await prisma.projectTask.create({
               data: {
@@ -87,9 +87,9 @@ export const createProjectTask = async (req, res, next) => {
                 startDate: req.body?.startDate,
                 startTime: req.body?.startTime,
                 endDate: req.body?.endDate,
-                endTime: req.body?.endTime
-              }
-            });
+                endTime: req.body?.endTime,
+              },
+            })
             if (task) {
               // if (projectDetails.status === "archived") {
               //   await prisma.project.update({
@@ -104,18 +104,18 @@ export const createProjectTask = async (req, res, next) => {
               if (req.body.startDate) {
                 const startDateInMilliSecs = new Date(
                   req.body.startDate
-                ).getTime();
-                const currentTimeInMilliSecs = new Date().getTime();
+                ).getTime()
+                const currentTimeInMilliSecs = new Date().getTime()
                 if (startDateInMilliSecs > currentTimeInMilliSecs) {
-                  status = "draft";
+                  status = "draft"
                   await prisma.projectTask.update({
                     where: {
-                      id: task.id
+                      id: task.id,
                     },
                     data: {
-                      status: status
-                    }
-                  });
+                      status: status,
+                    },
+                  })
                 }
               }
               await prisma.notifications.create({
@@ -123,49 +123,49 @@ export const createProjectTask = async (req, res, next) => {
                   userId: assignedMember.userId,
                   type: "task",
                   title: `${projectDetails.name} task creation`,
-                  description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
-                }
-              });
+                  description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`,
+                },
+              })
               if (assignedMember.userId !== managedUser.userId) {
                 await prisma.notifications.create({
                   data: {
                     userId: managedUser.userId,
                     type: "task",
                     title: `${projectDetails.name} task creation`,
-                    description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`
-                  }
-                });
+                    description: `Task - ${task.name} has been created under ${projectDetails.name}. Please check`,
+                  },
+                })
               }
               res.json({
                 status: "success",
                 data: task,
-                errors: []
-              });
+                errors: [],
+              })
             } else {
-              res.status(422);
-              res.send({ message: "Task not created" });
+              res.status(422)
+              res.send({ message: "Task not created" })
             }
           } else {
-            throw new Error("Assigned User is not Project Member");
+            throw new Error("Assigned User is not Project Member")
           }
         } else {
-          res.status(422);
+          res.status(422)
           res.send({
-            message: `Project Member with role ${memberDetails.role} cannot create task`
-          });
+            message: `Project Member with role ${memberDetails.role} cannot create task`,
+          })
         }
       } else {
-        res.status(422);
-        res.send({ message: "Project member does not exist" });
+        res.status(422)
+        res.send({ message: "Project member does not exist" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 // export const createProjectTask = async (req, res, next) => {
 //   try {
@@ -210,276 +210,276 @@ export const createProjectTask = async (req, res, next) => {
 
 export const updateProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
+    const projectId = req.params.id
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     if (projectDetails) {
-      const taskId = req.params.taskId;
+      const taskId = req.params.taskId
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
-        }
-      });
+          id: taskId,
+        },
+      })
       if (taskDetails) {
         const memberDetails = await prisma.projectMember.findFirst({
           where: {
             projectId: projectId,
-            userId: req.user.id
-          }
-        });
+            userId: req.user.id,
+          },
+        })
         if (!memberDetails) {
-          throw new Error("Project Member does not exist");
+          throw new Error("Project Member does not exist")
         }
         if (
           memberDetails.role === "admin" ||
           req.user.id === taskDetails.managedUserId
         ) {
-          let { memberId, managedMemberId, ...rest } = req.body;
+          let { memberId, managedMemberId, ...rest } = req.body
           const data = {
-            ...rest
-          };
+            ...rest,
+          }
           if (memberId === "self") {
             const assignedMember = await prisma.projectMember.findFirst({
               where: {
                 userId: req.user.id,
-                projectId: projectId
-              }
-            });
-            memberId = assignedMember.id;
+                projectId: projectId,
+              },
+            })
+            memberId = assignedMember.id
           }
           if (taskDetails.memberId !== memberId) {
-            data.memberId = memberId;
+            data.memberId = memberId
             await prisma.taskModifications.create({
               data: {
                 newMemberId: memberId,
                 oldMemberId: taskDetails.memberId,
-                taskId: taskDetails.id
-              }
-            });
+                taskId: taskDetails.id,
+              },
+            })
           }
           if (managedMemberId === "self") {
-            managedMemberId = req.user.id;
+            managedMemberId = req.user.id
           }
           if (managedMemberId) {
             const managedMember = await prisma.projectMember.findFirst({
               where: {
                 projectId: projectId,
-                userId: managedMemberId
+                userId: managedMemberId,
               },
               include: {
-                user: true
-              }
-            });
+                user: true,
+              },
+            })
             if (
               managedMember &&
               managedMemberId !== taskDetails.managedUserId
             ) {
-              data.managedUserId = managedMember.userId;
-              data.managedUserName = managedMember.user.username;
+              data.managedUserId = managedMember.userId
+              data.managedUserName = managedMember.user.username
               await prisma.taskModifications.create({
                 data: {
                   newManagedUserId: managedMember.userId,
                   oldManagedUserId: taskDetails.managedUserId,
-                  taskId: taskDetails.id
-                }
-              });
+                  taskId: taskDetails.id,
+                },
+              })
             }
           }
           if (req.body.startDate) {
-            let startDateInMilliSecs = new Date(req.body.startDate).getTime();
-            const currentTimeInMilliSecs = new Date().getTime();
-            const startTime = req.body.startTime;
-            const [hours, minutes] = startTime.split(":");
+            let startDateInMilliSecs = new Date(req.body.startDate).getTime()
+            const currentTimeInMilliSecs = new Date().getTime()
+            const startTime = req.body.startTime
+            const [hours, minutes] = startTime.split(":")
             startDateInMilliSecs =
               startDateInMilliSecs +
               (hours * 60 * 60 + minutes * 60) * 1000 -
-              4 * 60 * 60 * 1000;
+              4 * 60 * 60 * 1000
             if (
               taskDetails.status === "draft" &&
               startDateInMilliSecs < currentTimeInMilliSecs
             ) {
-              data.status = "in_progress";
+              data.status = "in_progress"
             } else if (
               taskDetails.status === "in_progress" &&
               startDateInMilliSecs > currentTimeInMilliSecs
             ) {
-              data.status = "draft";
+              data.status = "draft"
             }
           }
           if (req.body.endDate) {
-            let endDateInMilliSecs = new Date(req.body.endDate).getTime();
-            const currentTimeInMilliSecs = new Date().getTime();
-            const endTime = req.body.endTime;
-            const [hrs, mnts] = endTime.split(":");
+            let endDateInMilliSecs = new Date(req.body.endDate).getTime()
+            const currentTimeInMilliSecs = new Date().getTime()
+            const endTime = req.body.endTime
+            const [hrs, mnts] = endTime.split(":")
             endDateInMilliSecs =
               endDateInMilliSecs +
               (hrs * 60 * 60 + mnts * 60) * 1000 -
-              4 * 60 * 60 * 1000;
+              4 * 60 * 60 * 1000
             if (endDateInMilliSecs < currentTimeInMilliSecs) {
-              data.status = "overdue";
+              data.status = "overdue"
             } else if (
               taskDetails.status === "overdue" &&
               endDateInMilliSecs > currentTimeInMilliSecs
             ) {
-              data.status = "in_progress";
+              data.status = "in_progress"
             }
           }
           const task = await prisma.projectTask.update({
             where: {
-              id: taskId
+              id: taskId,
             },
-            data: data
-          });
+            data: data,
+          })
           if (task) {
             res.json({
               status: "success",
               data: task,
-              errors: []
-            });
+              errors: [],
+            })
           } else {
-            res.status(422);
-            res.send({ message: "Task not updated" });
+            res.status(422)
+            res.send({ message: "Task not updated" })
           }
         } else {
           throw new Error(
             "Project Admin or Task Manager can  edit task details"
-          );
+          )
         }
       } else {
-        throw new Error("Task  does not exist");
+        throw new Error("Task  does not exist")
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const submitProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     const projectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id,
-        projectId: projectId
+        projectId: projectId,
       },
       include: {
-        user: true
-      }
-    });
+        user: true,
+      },
+    })
     if (projectDetails && projectMemberDetails) {
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
-        }
-      });
+          id: taskId,
+        },
+      })
       if (
         taskDetails.status === "in_progress" ||
         taskDetails.status === "overdue"
       ) {
-        let status: TASK_STATUS = "in_review";
+        let status: TASK_STATUS = "in_review"
         // if (taskDetails.status === "overdue") {
         //   status = "overdue";
         // }
         if (taskDetails.memberId === projectMemberDetails.id) {
           const task = await prisma.projectTask.update({
             where: {
-              id: taskId
+              id: taskId,
             },
             data: {
               status: status,
-              submittedAt: new Date().toISOString()
-            }
-          });
+              submittedAt: new Date().toISOString(),
+            },
+          })
           await prisma.notifications.create({
             data: {
               userId: taskDetails.managedUserId,
               type: "task",
               title: `Task status change`,
-              description: `Task-${taskDetails.displayId} has been submitted by ${projectMemberDetails.user.username} for the task - ${taskDetails.name}`
-            }
-          });
+              description: `Task-${taskDetails.displayId} has been submitted by ${projectMemberDetails.user.username} for the task - ${taskDetails.name}`,
+            },
+          })
           res.json({
             status: "success",
             data: task,
-            errors: []
-          });
+            errors: [],
+          })
         } else {
-          res.status(422);
-          res.send({ message: "Member is not assigned to task" });
+          res.status(422)
+          res.send({ message: "Member is not assigned to task" })
         }
       } else {
-        res.status(422);
-        res.send({ message: "Task cannot be submittted" });
+        res.status(422)
+        res.send({ message: "Task cannot be submittted" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const approveProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     const projectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id,
-        projectId: projectId
+        projectId: projectId,
       },
       include: {
-        user: true
-      }
-    });
+        user: true,
+      },
+    })
     if (projectDetails && projectMemberDetails) {
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
+          id: taskId,
         },
         include: {
-          assignedTo: true
-        }
-      });
+          assignedTo: true,
+        },
+      })
       if (taskDetails.status === "in_review") {
         if (
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
-          let status: TASK_STATUS = "completed";
-          const endDate = new Date(taskDetails.endDate);
-          const endDateInMilliSecs = new Date(taskDetails.endDate).getTime();
+          let status: TASK_STATUS = "completed"
+          const endDate = new Date(taskDetails.endDate)
+          const endDateInMilliSecs = new Date(taskDetails.endDate).getTime()
           if (endDateInMilliSecs < new Date().getTime()) {
-            status = "delayed";
+            status = "delayed"
           }
           const task = await prisma.projectTask.update({
             where: {
-              id: taskId
+              id: taskId,
             },
             data: {
               status: status,
               completedAt: new Date().toISOString(),
-              isCompleted: true
-            }
-          });
+              isCompleted: true,
+            },
+          })
           // const projectTasks = await prisma.projectTask.findMany({
           //   where: {
           //     projectId: projectId,
@@ -509,224 +509,224 @@ export const approveProjectTask = async (req, res, next) => {
               userId: taskDetails.assignedTo.userId,
               type: "task",
               title: `Task status change`,
-              description: `Task-${taskDetails.displayId} has been approved by ${projectMemberDetails.user.username} for the task - ${taskDetails.name}`
-            }
-          });
+              description: `Task-${taskDetails.displayId} has been approved by ${projectMemberDetails.user.username} for the task - ${taskDetails.name}`,
+            },
+          })
           res.json({
             status: "success",
             data: task,
-            errors: []
-          });
+            errors: [],
+          })
         } else {
-          res.status(422);
+          res.status(422)
           res.send({
             message:
-              "User should be project admin or task manager to approve the task"
-          });
+              "User should be project admin or task manager to approve the task",
+          })
         }
       } else {
-        res.status(422);
-        res.send({ message: "Task cannot be approved" });
+        res.status(422)
+        res.send({ message: "Task cannot be approved" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const reopenProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     const projectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id,
-        projectId: projectId
-      }
-    });
+        projectId: projectId,
+      },
+    })
     if (projectDetails && projectMemberDetails) {
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
-        }
-      });
+          id: taskId,
+        },
+      })
       if (taskDetails.status === "completed") {
         if (
           projectMemberDetails.role === "admin" ||
           taskDetails.managedUserId === projectMemberDetails.userId
         ) {
-          let status: any = "in_progress";
-          const endDate = taskDetails.endDate;
-          const endDateInMilliSecs = new Date(endDate).getTime();
-          const currentDateInMilliSecs = new Date().getTime();
+          let status: any = "in_progress"
+          const endDate = taskDetails.endDate
+          const endDateInMilliSecs = new Date(endDate).getTime()
+          const currentDateInMilliSecs = new Date().getTime()
           if (currentDateInMilliSecs > endDateInMilliSecs) {
-            status = "overdue";
+            status = "overdue"
           }
           const task = await prisma.projectTask.update({
             where: {
-              id: taskId
+              id: taskId,
             },
             data: {
               status: status,
               reopenedAt: new Date().toISOString(),
               completedAt: null,
-              isCompleted: false
-            }
-          });
+              isCompleted: false,
+            },
+          })
           const taskTransition = await prisma.taskStatusTransitions.create({
             data: {
               status: "reopened",
               taskId: taskId,
               projectId: projectId,
-              userId: projectMemberDetails.userId
-            }
-          });
+              userId: projectMemberDetails.userId,
+            },
+          })
           if (taskTransition) {
             res.json({
               status: "success",
               data: task,
-              errors: []
-            });
+              errors: [],
+            })
           } else {
-            res.status(422);
+            res.status(422)
             res.send({
-              message: "Capturing Task transition failed"
-            });
+              message: "Capturing Task transition failed",
+            })
           }
         } else {
-          res.status(422);
+          res.status(422)
           res.send({
             message:
-              "User should be project admin or task manager to reopen the task"
-          });
+              "User should be project admin or task manager to reopen the task",
+          })
         }
       } else {
-        res.status(422);
-        res.send({ message: "Only completed tasks can be reopened" });
+        res.status(422)
+        res.send({ message: "Only completed tasks can be reopened" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const archiveProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     const projectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id,
-        projectId: projectId
-      }
-    });
+        projectId: projectId,
+      },
+    })
     if (projectDetails && projectMemberDetails) {
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
-        }
-      });
+          id: taskId,
+        },
+      })
       if (
         projectMemberDetails.role === "admin" ||
         taskDetails.managedUserId === projectMemberDetails.userId
       ) {
         const task = await prisma.projectTask.update({
           where: {
-            id: taskId
+            id: taskId,
           },
           data: {
             status: "archived",
             reopenedAt: new Date().toISOString(),
-            isArchived: true
-          }
-        });
+            isArchived: true,
+          },
+        })
         const taskTransition = await prisma.taskStatusTransitions.create({
           data: {
             status: "archived",
             taskId: taskId,
             projectId: projectId,
-            userId: projectMemberDetails.userId
-          }
-        });
+            userId: projectMemberDetails.userId,
+          },
+        })
         if (taskTransition) {
           res.json({
             status: "success",
             data: task,
-            errors: []
-          });
+            errors: [],
+          })
         } else {
-          res.status(422);
+          res.status(422)
           res.send({
-            message: "Capturing Task transition failed"
-          });
+            message: "Capturing Task transition failed",
+          })
         }
       } else {
-        res.status(422);
+        res.status(422)
         res.send({
           message:
-            "User should be project admin or task manager to archive the task"
-        });
+            "User should be project admin or task manager to archive the task",
+        })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const rejectProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
-    let currentDate = new Date().toISOString();
+    const projectId = req.params.id
+    const taskId = req.params.taskId
+    let currentDate = new Date().toISOString()
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     const projectMemberDetails = await prisma.projectMember.findFirst({
       where: {
         userId: req.user.id,
-        projectId: projectId
-      }
-    });
+        projectId: projectId,
+      },
+    })
     if (projectDetails && projectMemberDetails) {
       const taskDetails = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
-        }
-      });
+          id: taskId,
+        },
+      })
       if (
         projectMemberDetails.role === "admin" ||
         taskDetails.managedUserId === projectMemberDetails.userId
       ) {
         const task = await prisma.projectTask.update({
           where: {
-            id: taskId
+            id: taskId,
           },
           data: {
             status: "in_progress",
-            rejectedAt: new Date().toISOString()
-          }
-        });
+            rejectedAt: new Date().toISOString(),
+          },
+        })
         // await prisma.projectTask.update({
         //   where: {
         //     id: taskId,
@@ -741,57 +741,57 @@ export const rejectProjectTask = async (req, res, next) => {
         res.json({
           status: "success",
           data: task,
-          errors: []
-        });
+          errors: [],
+        })
       } else {
-        res.status(422);
+        res.status(422)
         res.send({
           message:
-            "User should be project admin or task manager to reject the task"
-        });
+            "User should be project admin or task manager to reject the task",
+        })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const getProjectTask = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
-    const showDetails = req.query.details;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
+    const showDetails = req.query.details
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     if (projectDetails) {
       const task = await prisma.projectTask.findFirst({
         where: {
-          id: taskId
+          id: taskId,
         },
         include: {
           assignedTo: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
-          createdBy: true
-        }
-      });
-      let managedMemberId = task.managedMemberId;
+          createdBy: true,
+        },
+      })
+      let managedMemberId = task.managedMemberId
       if (!managedMemberId) {
         const managedMember = await prisma.projectMember.findFirst({
           where: {
             projectId: projectId,
-            userId: task.managedUserId
-          }
-        });
-        managedMemberId = managedMember.id;
+            userId: task.managedUserId,
+          },
+        })
+        managedMemberId = managedMember.id
       }
       const taskDetails = {
         id: task.id,
@@ -806,138 +806,140 @@ export const getProjectTask = async (req, res, next) => {
         displayId: task.displayId,
         status: task.status,
         name: task.name,
+        startDate: task.startDate,
+        startTime: task.startTime,
         due_by: task.endDate,
         end_time: task.endTime,
         completedAt: task.completedAt ?? null,
         submitted_at: task.submittedAt ?? null,
         rejected_at: task.rejectedAt ?? null,
-        description: task.description ?? null
-      };
+        description: task.description ?? null,
+      }
       if (taskDetails) {
         if (showDetails) {
           res.json({
             status: "success",
             data: taskDetails,
-            errors: []
-          });
+            errors: [],
+          })
         } else {
           res.json({
             status: "success",
             data: task,
-            errors: []
-          });
+            errors: [],
+          })
         }
       } else {
-        res.status(422);
-        res.send({ message: "Project does not have tasks" });
+        res.status(422)
+        res.send({ message: "Project does not have tasks" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const getProjectTaskModifications = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const taskId = req.params.taskId;
+    const projectId = req.params.id
+    const taskId = req.params.taskId
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     if (projectDetails) {
       const taskModifications = await prisma.taskModifications.findMany({
         where: {
-          taskId: taskId
-        }
-      });
+          taskId: taskId,
+        },
+      })
       if (taskModifications) {
         res.json({
           status: "success",
           data: taskModifications,
-          errors: []
-        });
+          errors: [],
+        })
       } else {
-        res.status(422);
-        res.send({ message: "Project does not have tasks" });
+        res.status(422)
+        res.send({ message: "Project does not have tasks" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const getProjectTasks = async (req, res, next) => {
   try {
-    const createdBy = req.query.created_by;
-    const assignedTo = req.query.assigned_to;
-    const projectId = req.params.id;
+    const createdBy = req.query.created_by
+    const assignedTo = req.query.assigned_to
+    const projectId = req.params.id
     const projectDetails = await prisma.project.findFirst({
       where: {
-        id: projectId
-      }
-    });
+        id: projectId,
+      },
+    })
     if (projectDetails) {
-      const status = req.query.status;
+      const status = req.query.status
       let whereParam: any = {
         projectId: projectId,
-        isArchived: false
-      };
+        isArchived: false,
+      }
       if (status) {
         whereParam = {
           projectId: projectId,
-          status: status
-        };
+          status: status,
+        }
       }
       const projectTasks = await prisma.projectTask.findMany({
         where: whereParam,
         include: {
           assignedTo: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
-          createdBy: true
+          createdBy: true,
         },
         orderBy: {
-          createdAt: "desc"
-        }
-      });
+          createdAt: "desc",
+        },
+      })
       const projectMember = await prisma.projectMember.findFirst({
         where: {
           userId: req.user.id,
-          projectId: projectId
+          projectId: projectId,
         },
         include: {
-          user: true
-        }
-      });
-      let userTasks = projectTasks;
+          user: true,
+        },
+      })
+      let userTasks = projectTasks
       if (createdBy) {
         userTasks = projectTasks.filter((task) => {
-          return task.userId === req.user.id;
-        });
+          return task.userId === req.user.id
+        })
       }
       if (assignedTo) {
         userTasks = projectTasks.filter((task) => {
           return (
             task.managedUserId === req.user.id ||
             task.memberId === projectMember.id
-          );
-        });
+          )
+        })
       }
       userTasks.forEach((task) => {
         if (task.managedMemberId === projectMember.id) {
-          task.managedUserName = projectMember.user.username;
+          task.managedUserName = projectMember.user.username
         }
-      });
+      })
       const tasks = userTasks.map((task) => {
         return {
           id: task.id,
@@ -950,72 +952,74 @@ export const getProjectTasks = async (req, res, next) => {
           displayId: task.displayId,
           status: task.status,
           name: task.name,
+          startDate: task.startDate,
+          startTime: task.startTime,
           due_by: task.endDate,
           end_time: task.endTime,
           completedAt: task.completedAt ?? null,
           submitted_at: task.submittedAt ?? null,
           rejected_at: task.rejectedAt ?? null,
-          description: task.description ?? null
-        };
-      });
+          description: task.description ?? null,
+        }
+      })
       if (tasks) {
         res.json({
           status: "success",
           data: tasks,
-          errors: []
-        });
+          errors: [],
+        })
       } else {
-        res.status(422);
-        res.send({ message: "Project does not have tasks" });
+        res.status(422)
+        res.send({ message: "Project does not have tasks" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project does not exist" });
+      res.status(422)
+      res.send({ message: "Project does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const getProjectMemberTasks = async (req, res, next) => {
   try {
-    const projectId = req.params.id;
-    const memberId = req.params.memberId;
-    const status = req.query.status;
+    const projectId = req.params.id
+    const memberId = req.params.memberId
+    const status = req.query.status
     const projectMember = await prisma.projectMember.findFirst({
       where: {
         id: memberId,
-        projectId: projectId
-      }
-    });
+        projectId: projectId,
+      },
+    })
     let whereParam: any = {
       OR: [
         {
-          memberId: memberId
+          memberId: memberId,
         },
         {
-          managedUserId: projectMember.userId
+          managedUserId: projectMember.userId,
         },
         {
-          userId: projectMember.userId
-        }
-      ]
-    };
+          userId: projectMember.userId,
+        },
+      ],
+    }
     if (status) {
       whereParam = {
         OR: [
           {
-            memberId: memberId
+            memberId: memberId,
           },
           {
-            managedUserId: projectMember.userId
+            managedUserId: projectMember.userId,
           },
           {
-            userId: projectMember.userId
-          }
+            userId: projectMember.userId,
+          },
         ],
-        status: status
-      };
+        status: status,
+      }
     }
     if (projectMember) {
       let tasks = await prisma.projectTask.findMany({
@@ -1023,17 +1027,17 @@ export const getProjectMemberTasks = async (req, res, next) => {
         include: {
           assignedTo: {
             include: {
-              user: true
-            }
+              user: true,
+            },
           },
-          createdBy: true
+          createdBy: true,
         },
         orderBy: {
-          createdAt: "desc"
-        }
-      });
-      tasks = tasks.filter((task) => !task.isArchived);
-      tasks = tasks.filter((task) => task.projectId === projectId);
+          createdAt: "desc",
+        },
+      })
+      tasks = tasks.filter((task) => !task.isArchived)
+      tasks = tasks.filter((task) => task.projectId === projectId)
       if (tasks) {
         const projectTasks = tasks.map((task) => {
           return {
@@ -1049,41 +1053,43 @@ export const getProjectMemberTasks = async (req, res, next) => {
             managedMemberId: task.managedMemberId,
             status: task.status,
             name: task.name,
+            startDate: task.startDate,
+            startTime: task.startTime,
             due_by: task.endDate,
             completedAt: task.completedAt ?? null,
             submitted_at: task.submittedAt ?? null,
             rejected_at: task.rejectedAt ?? null,
             end_time: task.endTime,
-            description: task.description ?? null
-          };
-        });
+            description: task.description ?? null,
+          }
+        })
         res.json({
           status: "success",
           data: projectTasks,
-          errors: []
-        });
+          errors: [],
+        })
       } else {
-        res.status(422);
-        res.send({ message: "Project does not have tasks" });
+        res.status(422)
+        res.send({ message: "Project does not have tasks" })
       }
     } else {
-      res.status(422);
-      res.send({ message: "Project Member does not exist" });
+      res.status(422)
+      res.send({ message: "Project Member does not exist" })
     }
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 export const updateAllTasks = async () => {
-  const date = new Date();
+  const date = new Date()
 
-  let day = date.getDate();
-  let month = date.getMonth() + 1;
-  let year = date.getFullYear();
+  let day = date.getDate()
+  let month = date.getMonth() + 1
+  let year = date.getFullYear()
 
   // This arrangement can be altered based on how we want the date's format to appear.
-  let currentDate = new Date().toISOString();
+  let currentDate = new Date().toISOString()
   try {
     // await prisma.projectTask.updateMany({
     //   where: {
@@ -1099,37 +1105,37 @@ export const updateAllTasks = async () => {
       where: {
         startDate: { gte: currentDate },
         startTime: { not: null },
-        status: { not: "archived" }
+        status: { not: "archived" },
       },
       data: {
-        status: "draft"
-      }
-    });
+        status: "draft",
+      },
+    })
     await prisma.projectTask.updateMany({
       where: {
         startDate: { lte: currentDate },
         startTime: { not: null },
         endDate: { gte: currentDate },
         endTime: { not: null },
-        status: { in: ["draft"] }
+        status: { in: ["draft"] },
       },
       data: {
-        status: "in_progress"
-      }
-    });
+        status: "in_progress",
+      },
+    })
     await prisma.projectTask.updateMany({
       where: {
         startDate: { lte: currentDate },
         startTime: { not: null },
         endDate: { lte: currentDate },
         endTime: { not: null },
-        status: { notIn: ["archived", "completed", "delayed", "overdue"] }
+        status: { notIn: ["archived", "completed", "delayed", "overdue"] },
       },
       data: {
-        status: "overdue"
-      }
-    });
+        status: "overdue",
+      },
+    })
   } catch (error) {
-    console.log("=====tasks updation failed");
+    console.log("=====tasks updation failed")
   }
-};
+}
