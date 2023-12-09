@@ -264,21 +264,43 @@ export const archiveProject = async (req, res, next) => {
       });
       if (projectMember && projectMember.role === "admin") {
         if (projectDetails.status === "archived") {
-          const date = new Date();
-
-          let day = date.getDate();
-          let month = date.getMonth() + 1;
-          let year = date.getFullYear();
-          let currentDate = `${day}-${month}-${year}`;
           if (projectDetails.startDate && projectDetails.endDate) {
+            let status: any = "draft";
+            if (projectDetails.startDate) {
+              const startDateInMilliSecs = new Date(
+                projectDetails.startDate
+              ).getTime();
+              const currentTimeInMilliSecs = new Date().getTime();
+              if (startDateInMilliSecs > currentTimeInMilliSecs) {
+                status = "draft";
+              } else if (
+                status === "draft" &&
+                startDateInMilliSecs < currentTimeInMilliSecs
+              ) {
+                status = "in_progress";
+              }
+            }
+            if (projectDetails.endDate) {
+              const endDateInMilliSecs = new Date(
+                projectDetails.endDate
+              ).getTime();
+              const currentTimeInMilliSecs = new Date().getTime();
+              if (endDateInMilliSecs < currentTimeInMilliSecs) {
+                status = "overdue";
+              } else if (
+                status === "overdue" &&
+                endDateInMilliSecs > currentTimeInMilliSecs
+              ) {
+                status = "in_progress";
+              }
+            }
+            console.log("==fianl status", status);
             const project = await prisma.project.update({
               where: {
-                id: projectId,
-                startDate: { not: null, gte: currentDate },
-                startTime: { not: null }
+                id: projectId
               },
               data: {
-                status: "draft"
+                status: status
               }
             });
             res.json({ status: "success", data: project, errors: [] });
